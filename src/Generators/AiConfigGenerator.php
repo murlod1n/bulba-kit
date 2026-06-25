@@ -10,22 +10,20 @@ use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
  *
  * Generates AI configuration files for fields that support AI generation.
  * Creates config files with prompt templates, context fields, and generation parameters.
- *
- * @package Nktlksvch\BulbaKit\Generators
  */
 class AiConfigGenerator
 {
     use LoadsStubs;
+
     /**
      * Generate AI configuration file for a model.
      *
-     * @param  string $name     Model name
-     * @param  array<int, array<string, mixed>>  $aiFields AI field configurations from askForAiGeneration()
-     * @return void
+     * @param  string  $name  Model name
+     * @param  array<int, array<string, mixed>>  $aiFields  AI field configurations from askForAiGeneration()
      */
     public function generate($name, $aiFields): void
     {
-        if (empty($aiFields) || !config('bulba.ai_enabled', true)) {
+        if (empty($aiFields) || ! config('bulba.ai_enabled', true)) {
             return;
         }
 
@@ -41,13 +39,13 @@ class AiConfigGenerator
             $stub
         );
 
-        File::put($configPath . "/{$name}.php", $content);
+        File::put($configPath."/{$name}.php", $content);
     }
 
     /**
      * Build the prompts array PHP code.
      *
-     * @param  array<int, array<string, mixed>> $aiFields AI field configurations
+     * @param  array<int, array<string, mixed>>  $aiFields  AI field configurations
      * @return string PHP array code
      */
     protected function buildPromptsArray(array $aiFields): string
@@ -58,7 +56,7 @@ class AiConfigGenerator
             $context = implode("', '", $ai['context_fields']);
             $promptsArray .= "        '{$ai['field']}' => [\n";
             $promptsArray .= "            'input_fields' => ['{$context}'],\n";
-            $promptsArray .= "            'prompt_template' => '" . addslashes($ai['prompt']) . "',\n";
+            $promptsArray .= "            'prompt_template' => '".addslashes($ai['prompt'])."',\n";
             $promptsArray .= "            'output_field' => '{$ai['field']}',\n";
             $promptsArray .= "            'max_tokens' => 150,\n";
             $promptsArray .= "            'temperature' => 0.7,\n";

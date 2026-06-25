@@ -20,7 +20,7 @@ trait LoadsStubs
      * Checks for a user-override stub at stubs/bulba/{name}.stub first,
      * then falls back to the package-bundled stub.
      *
-     * @param  string $name Stub name (without .stub extension)
+     * @param  string  $name  Stub name (without .stub extension)
      * @return string Stub file content
      *
      * @throws FileNotFoundException
@@ -40,8 +40,8 @@ trait LoadsStubs
      * Used for nested stub structures like controller method stubs
      * (e.g., controllers/methods/inertia-index.stub).
      *
-     * @param  string $subDir Subdirectory path relative to stubs root
-     * @param  string $name   Stub name (without .stub extension)
+     * @param  string  $subDir  Subdirectory path relative to stubs root
+     * @param  string  $name  Stub name (without .stub extension)
      * @return string Stub file content
      *
      * @throws FileNotFoundException
@@ -58,11 +58,11 @@ trait LoadsStubs
     /**
      * Get the absolute path to a package-bundled stub file.
      *
-     * @param  string $name Stub name (without .stub extension, may include subdirectory)
+     * @param  string  $name  Stub name (without .stub extension, may include subdirectory)
      * @return string Absolute file path
      */
     protected function getPackageStubPath(string $name): string
     {
-        return __DIR__ . '/../../Resources/stubs/' . $name . '.stub';
+        return __DIR__.'/../../Resources/stubs/'.$name.'.stub';
     }
 }

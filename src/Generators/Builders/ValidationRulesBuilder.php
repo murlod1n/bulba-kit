@@ -23,9 +23,9 @@ class ValidationRulesBuilder
     /**
      * Build validation rules array from field definitions and relationships.
      *
-     * @param  array<int, array<string, mixed>>  $fields        Field definitions from askForFields()
-     * @param  string $name          Resource/model name (used for unique table reference)
-     * @param  array<int, array<string, mixed>>  $relationships Relationship definitions from askForRelationships()
+     * @param  array<int, array<string, mixed>>  $fields  Field definitions from askForFields()
+     * @param  string  $name  Resource/model name (used for unique table reference)
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions from askForRelationships()
      * @return array<string, array<int, string>> Associative array of field_name => rules_array
      */
     public function build(array $fields, string $name, array $relationships = []): array
@@ -44,14 +44,19 @@ class ValidationRulesBuilder
         $rules = [];
 
         foreach ($fields as $field) {
+            // Skip image fields — they're handled by Media Library, not DB columns
+            if ($field['type'] === 'image') {
+                continue;
+            }
+
             $rule = [];
             $rule[] = isset($field['modifiers']['nullable']) ? 'nullable' : 'required';
 
             if ($field['type'] === 'string' && isset($field['modifiers']['length'])) {
-                $rule[] = 'max:' . $field['modifiers']['length'];
+                $rule[] = 'max:'.$field['modifiers']['length'];
             }
             if (isset($field['modifiers']['unique'])) {
-                $rule[] = 'unique:' . Str::plural(Str::lower($name)) . ',' . $field['name'];
+                $rule[] = 'unique:'.Str::plural(Str::lower($name)).','.$field['name'];
             }
             if ($field['type'] === 'integer') {
                 $rule[] = 'integer';
@@ -73,7 +78,7 @@ class ValidationRulesBuilder
 
             $rule = $info['nullable'] ? ['nullable'] : ['required'];
             $rule[] = 'integer';
-            $rule[] = 'exists:' . $info['table'] . ',id';
+            $rule[] = 'exists:'.$info['table'].',id';
 
             $rules[$fk] = $rule;
         }

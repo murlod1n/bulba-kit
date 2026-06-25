@@ -19,7 +19,7 @@ abstract class AbstractResource
      *
      * @return string Fully qualified model class name (e.g., \App\Models\Post::class)
      */
-    public static abstract function model(): string;
+    abstract public static function model(): string;
 
     /**
      * Get the field definitions for form rendering.
@@ -28,7 +28,7 @@ abstract class AbstractResource
      *
      * @return array<int, array<string, mixed>> Array of field descriptor arrays
      */
-    public static abstract function fields(): array;
+    abstract public static function fields(): array;
 
     /**
      * Get the validation rules for form submission.
@@ -38,7 +38,7 @@ abstract class AbstractResource
      *
      * @return array<string, array<int, string>> Associative array of validation rules
      */
-    public static abstract function validationRules(): array;
+    abstract public static function validationRules(): array;
 
     /**
      * Get the relationship metadata for relation display and management.
@@ -48,5 +48,5 @@ abstract class AbstractResource
      *
      * @return array<string, array<string, mixed>> Associative array of relation_name => metadata
      */
-    public static abstract function relations(): array;
+    abstract public static function relations(): array;
 }

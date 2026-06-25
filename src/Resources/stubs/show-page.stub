@@ -41,6 +41,7 @@ interface PageProps {
     item: Record<string, unknown>;
     fields: FieldDef[];
     relations: Record<string, Record<string, RelationDef>>;
+    [key: string]: unknown;
 }
 
 export default function Show() {

@@ -2,8 +2,8 @@
 
 namespace Nktlksvch\BulbaKit\Generators;
 
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
 
 /**
@@ -14,20 +14,18 @@ use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
  * - Fillable attributes
  * - Soft deletes support (optional)
  * - Relationship methods (belongsTo, hasOne, hasMany, belongsToMany)
- *
- * @package Nktlksvch\BulbaKit\Generators
  */
 class ModelGenerator
 {
     use LoadsStubs;
+
     /**
      * Generate a new Model class file.
      *
-     * @param  string $name            Model name (e.g., 'Post')
-     * @param  array<int, array<string, mixed>>  $fields          Field definitions from askForFields()
-     * @param  bool   $withSoftDeletes Whether to include SoftDeletes trait
-     * @param  array<int, array<string, mixed>>  $relationships   Relationship definitions from askForRelationships()
-     * @return void
+     * @param  string  $name  Model name (e.g., 'Post')
+     * @param  array<int, array<string, mixed>>  $fields  Field definitions from askForFields()
+     * @param  bool  $withSoftDeletes  Whether to include SoftDeletes trait
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions from askForRelationships()
      */
     public function generate($name, $fields, $withSoftDeletes, $relationships = []): void
     {
@@ -39,6 +37,8 @@ class ModelGenerator
         }
 
         $stub = $this->getStub('model');
+        $imageFields = array_filter($fields, fn ($f) => ($f['type'] ?? '') === 'image');
+        $hasMedia = count($imageFields) > 0;
 
         $content = str_replace(
             [
@@ -48,14 +48,24 @@ class ModelGenerator
                 '{{ softDeleteImport }}',
                 '{{ relationImports }}',
                 '{{ relations }}',
+                '{{ mediaInterface }}',
+                '{{ mediaTrait }}',
+                '{{ mediaImports }}',
+                '{{ mediaCollections }}',
+                '{{ mediaConversions }}',
             ],
             [
                 $name,
                 $this->buildFillableString($fields, $relationships),
-                $this->buildSoftDeleteTrait($withSoftDeletes),
+                $this->buildSoftDeleteTrait($withSoftDeletes).($hasMedia ? "    use InteractsWithMedia;\n" : ''),
                 $this->buildSoftDeleteImport($withSoftDeletes),
                 $this->buildRelationImports($relationships),
                 $this->buildRelationMethods($relationships),
+                $hasMedia ? ' implements HasMedia' : '',
+                '', // trait already added in softDeleteTrait
+                $hasMedia ? "\nuse Spatie\\MediaLibrary\\HasMedia;\nuse Spatie\\MediaLibrary\\InteractsWithMedia;\nuse Spatie\\MediaLibrary\\MediaCollections\\Models\\Media;\nuse Spatie\\Image\\Enums\\Fit;" : '',
+                $hasMedia ? $this->buildMediaCollections($imageFields) : $this->buildMediaCollections([]),
+                $hasMedia ? $this->buildMediaConversions($imageFields) : $this->buildMediaConversions([]),
             ],
             $stub
         );
@@ -70,11 +80,10 @@ class ModelGenerator
      * When a new model defines a relationship with an existing model,
      * this method adds the inverse relationship method to the existing model.
      *
-     * @param  string $targetModel  Model to add the relation to
-     * @param  string $relationType Relation type (belongsTo, hasOne, hasMany, belongsToMany)
-     * @param  string $currentModel Current model being created
-     * @param  string $fk           Foreign key or pivot table name
-     * @return void
+     * @param  string  $targetModel  Model to add the relation to
+     * @param  string  $relationType  Relation type (belongsTo, hasOne, hasMany, belongsToMany)
+     * @param  string  $currentModel  Current model being created
+     * @param  string  $fk  Foreign key or pivot table name
      */
     public function addInverseRelation(
         string $targetModel,
@@ -84,7 +93,7 @@ class ModelGenerator
     ): void {
         $path = app_path("Models/{$targetModel}.php");
 
-        if (!File::exists($path)) {
+        if (! File::exists($path)) {
             return;
         }
 
@@ -106,7 +115,7 @@ class ModelGenerator
 
         // Add relation method
         $method = $this->buildSingleRelationMethod($methodName, $relationType, $currentModel, $fk);
-        $content = preg_replace('/\}\s*$/', $method . "\n}", $content);
+        $content = preg_replace('/\}\s*$/', $method."\n}", $content);
 
         File::put($path, $content);
     }
@@ -116,17 +125,17 @@ class ModelGenerator
      *
      * Includes user-defined fields and auto-generated FK fields from belongsTo relationships.
      *
-     * @param  array<int, array<string, mixed>> $fields        Field definitions
-     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>>  $fields  Field definitions
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
      * @return string Comma-separated quoted field names
      */
     protected function buildFillableString(array $fields, array $relationships = []): string
     {
-        $fillable = array_map(fn($f) => "'{$f['name']}'", $fields);
+        $fillable = array_map(fn ($f) => "'{$f['name']}'", $fields);
         $fieldNames = array_column($fields, 'name');
 
         foreach ($relationships as $rel) {
-            if ($rel['type'] === 'belongsTo' && !in_array($rel['foreign_key'], $fieldNames)) {
+            if ($rel['type'] === 'belongsTo' && ! in_array($rel['foreign_key'], $fieldNames)) {
                 $fillable[] = "'{$rel['foreign_key']}'";
             }
         }
@@ -137,7 +146,7 @@ class ModelGenerator
     /**
      * Build the SoftDeletes trait code.
      *
-     * @param  bool $withSoftDeletes Whether to include SoftDeletes
+     * @param  bool  $withSoftDeletes  Whether to include SoftDeletes
      * @return string Trait code or empty string
      */
     protected function buildSoftDeleteTrait(bool $withSoftDeletes): string
@@ -148,7 +157,7 @@ class ModelGenerator
     /**
      * Build the SoftDeletes import statement.
      *
-     * @param  bool $withSoftDeletes Whether to include SoftDeletes
+     * @param  bool  $withSoftDeletes  Whether to include SoftDeletes
      * @return string Import statement or empty string
      */
     protected function buildSoftDeleteImport(bool $withSoftDeletes): string
@@ -159,7 +168,7 @@ class ModelGenerator
     /**
      * Build model import statements for relationships.
      *
-     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
      * @return string Import statements
      */
     protected function buildRelationImports(array $relationships): string
@@ -179,7 +188,7 @@ class ModelGenerator
     /**
      * Build all relationship method code blocks.
      *
-     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
      * @return string Method code blocks
      */
     protected function buildRelationMethods(array $relationships): string
@@ -209,8 +218,8 @@ class ModelGenerator
     /**
      * Resolve the method name for a relation.
      *
-     * @param  string $relationType Relation type
-     * @param  string $modelName   Related model name
+     * @param  string  $relationType  Relation type
+     * @param  string  $modelName  Related model name
      * @return string Method name in camelCase
      */
     protected function resolveMethodName(string $relationType, string $modelName): string
@@ -223,8 +232,8 @@ class ModelGenerator
     /**
      * Add a foreign key field to the model's $fillable array.
      *
-     * @param  string $content Model file content
-     * @param  string $fk      Foreign key column name
+     * @param  string  $content  Model file content
+     * @param  string  $fk  Foreign key column name
      * @return string Updated content
      */
     protected function addFkToFillable(string $content, string $fk): string
@@ -237,7 +246,7 @@ class ModelGenerator
         // Find the fillable array and append FK
         return preg_replace(
             '/(protected\s+\$fillable\s*=\s*\[)(.*?)(\])/s',
-            '$1$2, \'' . $fk . '\'$3',
+            '$1$2, \''.$fk.'\'$3',
             $content
         );
     }
@@ -245,8 +254,8 @@ class ModelGenerator
     /**
      * Ensure the model import statement exists in the file.
      *
-     * @param  string $content    File content
-     * @param  string $modelName  Model to import
+     * @param  string  $content  File content
+     * @param  string  $modelName  Model to import
      * @return string Updated content
      */
     protected function ensureModelImport(string $content, string $modelName): string
@@ -270,10 +279,10 @@ class ModelGenerator
     /**
      * Build a single relation method code block.
      *
-     * @param  string $methodName   Method name
-     * @param  string $relationType Relation type
-     * @param  string $model        Related model name
-     * @param  string $fk           Foreign key or pivot table
+     * @param  string  $methodName  Method name
+     * @param  string  $relationType  Relation type
+     * @param  string  $model  Related model name
+     * @param  string  $fk  Foreign key or pivot table
      * @return string Method code
      */
     protected function buildSingleRelationMethod(
@@ -318,9 +327,9 @@ PHP,
     /**
      * Build a belongsTo relationship method.
      *
-     * @param  string $name   Method name
-     * @param  string $target Target model name
-     * @param  string $fk     Foreign key column
+     * @param  string  $name  Method name
+     * @param  string  $target  Target model name
+     * @param  string  $fk  Foreign key column
      * @return string Method code
      */
     protected function buildBelongsTo(string $name, string $target, string $fk): string
@@ -336,9 +345,9 @@ PHP;
     /**
      * Build a hasOne relationship method.
      *
-     * @param  string $name   Method name
-     * @param  string $target Target model name
-     * @param  string $fk     Foreign key column
+     * @param  string  $name  Method name
+     * @param  string  $target  Target model name
+     * @param  string  $fk  Foreign key column
      * @return string Method code
      */
     protected function buildHasOne(string $name, string $target, string $fk): string
@@ -354,9 +363,9 @@ PHP;
     /**
      * Build a hasMany relationship method.
      *
-     * @param  string $name   Method name
-     * @param  string $target Target model name
-     * @param  string $fk     Foreign key column
+     * @param  string  $name  Method name
+     * @param  string  $target  Target model name
+     * @param  string  $fk  Foreign key column
      * @return string Method code
      */
     protected function buildHasMany(string $name, string $target, string $fk): string
@@ -372,9 +381,9 @@ PHP;
     /**
      * Build a belongsToMany relationship method.
      *
-     * @param  string $name   Method name
-     * @param  string $target Target model name
-     * @param  string $pivot  Pivot table name
+     * @param  string  $name  Method name
+     * @param  string  $target  Target model name
+     * @param  string  $pivot  Pivot table name
      * @return string Method code
      */
     protected function buildBelongsToMany(string $name, string $target, string $pivot): string
@@ -383,6 +392,80 @@ PHP;
     public function {$name}()
     {
         return \$this->belongsToMany({$target}::class, '{$pivot}');
+    }
+PHP;
+    }
+
+    /**
+     * Build registerMediaCollections method for image fields.
+     *
+     * @param  array<int, array<string, mixed>>  $imageFields  Image field definitions
+     * @return string Method code or comment
+     */
+    protected function buildMediaCollections(array $imageFields): string
+    {
+        if (empty($imageFields)) {
+            return '    // media collections';
+        }
+
+        $lines = [];
+
+        foreach ($imageFields as $field) {
+            $collection = $field['modifiers']['collection'] ?? $field['name'];
+            $single = $field['modifiers']['single'] ?? true;
+
+            if ($single) {
+                $lines[] = "        \$this->addMediaCollection('{$collection}')->singleFile();";
+            } else {
+                $lines[] = "        \$this->addMediaCollection('{$collection}');";
+            }
+        }
+
+        $body = implode("\n", $lines);
+
+        return <<<PHP
+    public function registerMediaCollections(): void
+    {
+{$body}
+    }
+PHP;
+    }
+
+    /**
+     * Build registerMediaConversions method for image fields.
+     *
+     * @param  array<int, array<string, mixed>>  $imageFields  Image field definitions
+     * @return string Method code or comment
+     */
+    protected function buildMediaConversions(array $imageFields): string
+    {
+        if (empty($imageFields)) {
+            return '    // media conversions';
+        }
+
+        $lines = [];
+
+        foreach ($imageFields as $field) {
+            $collection = $field['modifiers']['collection'] ?? $field['name'];
+            $width = $field['modifiers']['thumb_width'] ?? 200;
+            $height = $field['modifiers']['thumb_height'] ?? 200;
+
+            $lines[] = "        \$this->addMediaConversion('thumb')";
+            $lines[] = "            ->fit(Fit::Contain, {$width}, {$height})";
+            $lines[] = '            ->nonQueued();';
+            $lines[] = '';
+            $lines[] = "        \$this->addMediaConversion('webp')";
+            $lines[] = '            ->fit(Fit::Max, 800, 600)';
+            $lines[] = "            ->format('webp')";
+            $lines[] = '            ->nonQueued();';
+        }
+
+        $body = implode("\n", $lines);
+
+        return <<<PHP
+    public function registerMediaConversions(?Media \$media = null): void
+    {
+{$body}
     }
 PHP;
     }

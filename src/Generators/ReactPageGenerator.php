@@ -34,8 +34,8 @@ class ReactPageGenerator
      */
     public function generate($name, $fields, $relationships): void
     {
-        $pagesPath = config('bulba.react_pages_path', 'Admin');
-        $pagesDir = resource_path("js/Pages/{$pagesPath}/{$name}");
+        $pagesPath = config('bulba.react_pages_path', 'admin');
+        $pagesDir = resource_path("js/pages/{$pagesPath}/{$name}");
         File::ensureDirectoryExists($pagesDir);
 
         $this->generateIndex($name, $fields, $pagesDir);
@@ -171,7 +171,18 @@ class ReactPageGenerator
             $fieldName = $field['name'];
             $label = Str::title(str_replace('_', ' ', $fieldName));
 
-            if ($type === 'text' || $type === 'json') {
+            if ($type === 'image') {
+                $jsx .= "\n                <ImageUpload\n";
+                $jsx .= "                    label=\"{$label}\"\n";
+                $jsx .= "                    value={data.{$fieldName}_url}\n";
+                $jsx .= "                    thumb={data.{$fieldName}_thumb}\n";
+                $jsx .= "                    alt={data.{$fieldName}_alt}\n";
+                $jsx .= "                    error={errors.{$fieldName}}\n";
+                $jsx .= "                    onChange={(file) => setData('{$fieldName}', file)}\n";
+                $jsx .= "                    onRemove={() => setData('remove_{$fieldName}', true)}\n";
+                $jsx .= "                    onAltChange={(alt) => setData('{$fieldName}_alt', alt)}\n";
+                $jsx .= '                />';
+            } elseif ($type === 'text' || $type === 'json') {
                 $jsx .= "\n                <Field data-invalid={!!errors.{$fieldName}}>\n";
                 $jsx .= "                    <FieldLabel htmlFor=\"{$fieldName}\">{$label}</FieldLabel>\n";
                 $jsx .= "                    <Textarea\n";

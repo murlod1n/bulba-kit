@@ -2,8 +2,8 @@
 
 namespace Nktlksvch\BulbaKit\Generators;
 
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
 
 /**
@@ -15,40 +15,39 @@ use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
  * - Adds use statements at the top of the file
  * - Ensures parent route file (web.php/api.php) requires the admin route file
  * - Supports both Inertia (Route::resource) and API (Route::apiResource) routes
- *
- * @package Nktlksvch\BulbaKit\Generators
  */
 class RouteGenerator
 {
     use LoadsStubs;
+
     /**
      * Generate route registration for a controller.
      *
-     * @param  string $name    Model name (e.g., 'Post')
-     * @param  string $type    Controller type ('inertia' or 'api')
-     * @param  array<int, string>  $methods Controller methods (unused, for interface compatibility)
-     * @return void
+     * @param  string  $name  Model name (e.g., 'Post')
+     * @param  string  $type  Controller type ('inertia' or 'api')
+     * @param  array<int, string>  $methods  Controller methods (unused, for interface compatibility)
      */
     public function generate(
         $name,
         $type = 'inertia',
         $methods = ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']
     ): void {
-        if (!config('bulba.auto_register_routes', true)) {
+        if (! config('bulba.auto_register_routes', true)) {
             return;
         }
 
         $routeFile = $this->getRouteFilePath($type);
 
         // Create route file if it doesn't exist
-        if (!file_exists($routeFile)) {
+        if (! file_exists($routeFile)) {
             File::ensureDirectoryExists(dirname($routeFile));
-            File::put($routeFile, $this->getStub('routes-' . $type . '-head'));
-            $this->ensureRequireInParent($type);
+            File::put($routeFile, $this->getStub('routes-'.$type.'-head'));
         }
 
-        $stub = $this->getStub('routes-' . $type);
-        $resourceName = Str::plural(Str::lower($name));
+        $this->ensureRequireInParent($type);
+
+        $stub = $this->getStub('routes-'.$type);
+        $resourceName = Str::plural(Str::kebab($name));
 
         // Get prefix and middleware based on type
         [$prefix, $middleware] = $this->getRouteConfig($type);
@@ -70,19 +69,19 @@ class RouteGenerator
         }
 
         // Insert use statement at the top
-        if (!Str::contains($content, $useStatement)) {
+        if (! Str::contains($content, $useStatement)) {
             $content = $this->insertUseStatement($content, $useStatement);
         }
 
         // Append route entry
-        $content = rtrim($content) . "\n" . $routeEntry;
+        $content = rtrim($content)."\n".$routeEntry;
         File::put($routeFile, $content);
     }
 
     /**
      * Get the route file path based on controller type.
      *
-     * @param  string $type Controller type
+     * @param  string  $type  Controller type
      * @return string Route file path
      */
     protected function getRouteFilePath(string $type): string
@@ -95,7 +94,7 @@ class RouteGenerator
     /**
      * Get route configuration (prefix and middleware) based on type.
      *
-     * @param  string $type Controller type
+     * @param  string  $type  Controller type
      * @return array{string, array<int, string>} [prefix, middleware]
      */
     protected function getRouteConfig(string $type): array
@@ -116,8 +115,8 @@ class RouteGenerator
     /**
      * Insert a use statement after the last existing use statement.
      *
-     * @param  string $content      File content
-     * @param  string $useStatement Use statement to insert
+     * @param  string  $content  File content
+     * @param  string  $useStatement  Use statement to insert
      * @return string Updated content
      */
     protected function insertUseStatement(string $content, string $useStatement): string
@@ -154,8 +153,7 @@ class RouteGenerator
     /**
      * Ensure the parent route file (web.php/api.php) requires the admin route file.
      *
-     * @param  string $type Controller type
-     * @return void
+     * @param  string  $type  Controller type
      */
     protected function ensureRequireInParent(string $type): void
     {
@@ -167,15 +165,15 @@ class RouteGenerator
             ? 'admin-api.php'
             : 'admin.php';
 
-        if (!file_exists($parentFile)) {
+        if (! file_exists($parentFile)) {
             return;
         }
 
         $requireLine = "require __DIR__.'/$adminFile';";
         $content = File::get($parentFile);
 
-        if (!Str::contains($content, $adminFile)) {
-            File::append($parentFile, "\n" . $requireLine . "\n");
+        if (! Str::contains($content, $adminFile)) {
+            File::append($parentFile, "\n".$requireLine."\n");
         }
     }
 }

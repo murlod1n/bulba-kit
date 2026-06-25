@@ -23,6 +23,7 @@ interface PageProps {
     fields: FieldDef[];
     relations: Record<string, RelationDef>;
     selectOptions: Record<string, Record<string, string>>;
+    [key: string]: unknown;
 }
 
 export default function Edit() {

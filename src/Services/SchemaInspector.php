@@ -4,7 +4,6 @@ namespace Nktlksvch\BulbaKit\Services;
 
 use Exception;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 /**
  * Schema Inspector Service
@@ -41,7 +40,7 @@ class SchemaInspector
         try {
             return collect(Schema::getTables())
                 ->pluck('name')
-                ->filter(fn($t) => !in_array($t, self::EXCLUDED_TABLES))
+                ->filter(fn ($t) => ! in_array($t, self::EXCLUDED_TABLES))
                 ->sort()
                 ->values()
                 ->toArray();
@@ -53,8 +52,8 @@ class SchemaInspector
     /**
      * Get column names for a given table.
      *
-     * @param  string $table Table name
-     * @return array<int, string>  List of column names
+     * @param  string  $table  Table name
+     * @return array<int, string> List of column names
      */
     public function getTableColumns(string $table): array
     {
@@ -73,7 +72,7 @@ class SchemaInspector
      * Checks for common display field names in order:
      * 'name', 'title', 'email', 'label', then falls back to 'id'.
      *
-     * @param  string $table Table name
+     * @param  string  $table  Table name
      * @return string Display field name
      */
     public function detectDisplayField(string $table): string
@@ -93,20 +92,20 @@ class SchemaInspector
     /**
      * Find existing FK columns in a table (columns ending with '_id').
      *
-     * @param  string $table Table name
-     * @return array<int, string>  List of FK column names
+     * @param  string  $table  Table name
+     * @return array<int, string> List of FK column names
      */
     public function getForeignKeyColumns(string $table): array
     {
         $columns = $this->getTableColumns($table);
-        return array_filter($columns, fn($c) => str_ends_with($c, '_id'));
+
+        return array_filter($columns, fn ($c) => str_ends_with($c, '_id'));
     }
 
     /**
      * Check if a table exists in the database.
      *
-     * @param  string $table Table name
-     * @return bool
+     * @param  string  $table  Table name
      */
     public function tableExists(string $table): bool
     {
@@ -116,9 +115,8 @@ class SchemaInspector
     /**
      * Check if a column exists in a table.
      *
-     * @param  string $table  Table name
-     * @param  string $column Column name
-     * @return bool
+     * @param  string  $table  Table name
+     * @param  string  $column  Column name
      */
     public function columnExists(string $table, string $column): bool
     {

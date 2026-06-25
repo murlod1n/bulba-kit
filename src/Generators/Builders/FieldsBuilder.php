@@ -26,8 +26,8 @@ class FieldsBuilder
      * Includes user-defined fields and auto-generated FK fields for belongsTo
      * relationships (unless the FK field is already defined by the user).
      *
-     * @param  array<int, array<string, mixed>> $fields        Field definitions from askForFields()
-     * @param  array<int, array<string, mixed>> $relationships Relationship definitions from askForRelationships()
+     * @param  array<int, array<string, mixed>>  $fields  Field definitions from askForFields()
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions from askForRelationships()
      * @return array<int, array<string, mixed>> Array of field descriptor arrays
      */
     public function build(array $fields, array $relationships): array
@@ -36,6 +36,33 @@ class FieldsBuilder
         $fieldNames = array_column($fields, 'name');
 
         foreach ($fields as $field) {
+            // Image fields are managed by Media Library, not DB columns
+            // Add virtual fields for URL, thumb, and alt
+            if ($field['type'] === 'image') {
+                $collection = $field['modifiers']['collection'] ?? $field['name'];
+
+                $result[] = [
+                    'name' => $field['name'].'_url',
+                    'type' => 'string',
+                    'label' => Str::title(str_replace('_', ' ', $field['name'])).' URL',
+                    'readOnly' => true,
+                ];
+                $result[] = [
+                    'name' => $field['name'].'_thumb',
+                    'type' => 'string',
+                    'label' => Str::title(str_replace('_', ' ', $field['name'])).' Thumbnail',
+                    'readOnly' => true,
+                ];
+                $result[] = [
+                    'name' => $field['name'].'_alt',
+                    'type' => 'string',
+                    'label' => Str::title(str_replace('_', ' ', $field['name'])).' Alt Text',
+                    'nullable' => true,
+                ];
+
+                continue;
+            }
+
             $entry = [
                 'name' => $field['name'],
                 'type' => $field['type'],

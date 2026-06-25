@@ -3,13 +3,17 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;{{ softDeleteImport }}
-{{ relationImports }}
+{{ relationImports }}{{ mediaImports }}
 
 #[Fillable([{{ fillable }}])]
-class {{ name }} extends Model
+class {{ name }} extends Model{{ mediaInterface }}
 {
     {{ softDeleteTrait }}
     protected $fillable = [{{ fillable }}];
 
 {{ relations }}
+
+{{ mediaCollections }}
+
+{{ mediaConversions }}
 }

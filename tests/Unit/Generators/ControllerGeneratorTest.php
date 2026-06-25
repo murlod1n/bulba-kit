@@ -19,7 +19,7 @@ class ControllerGeneratorTest extends TestCase
         $this->app->useAppPath($this->tempDir . '/app');
         $this->app['config']->set('bulba.controller_namespace', 'App\\Http\\Controllers\\Admin');
         $this->app['config']->set('bulba.resource_namespace', 'App\\Resources');
-        $this->app['config']->set('bulba.react_pages_path', 'Admin');
+        $this->app['config']->set('bulba.react_pages_path', 'admin');
     }
 
     public function test_generate_creates_controller_file(): void

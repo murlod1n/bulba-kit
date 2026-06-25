@@ -39,7 +39,7 @@ class GenerationPipelineTest extends TestCase
         mkdir($this->tempDir . '/app/Resources', 0755, true);
         mkdir($this->tempDir . '/app/Http/Controllers/Admin', 0755, true);
         mkdir($this->tempDir . '/database/migrations', 0755, true);
-        mkdir($this->tempDir . '/resources/js/Pages/Admin', 0755, true);
+        mkdir($this->tempDir . '/resources/js/pages/admin', 0755, true);
     }
 
     protected function tearDown(): void
@@ -346,7 +346,7 @@ class GenerationPipelineTest extends TestCase
 
         $this->reactGen->generate('Post', $fields, $relationships);
 
-        $pagesDir = $this->tempDir . '/resources/js/Pages/Admin/Post';
+        $pagesDir = $this->tempDir . '/resources/js/pages/admin/Post';
 
         $this->assertFileDoesNotExist($pagesDir . '/Index.tsx');
         $this->assertFileDoesNotExist($pagesDir . '/Create.tsx');

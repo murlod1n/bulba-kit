@@ -20,7 +20,7 @@ class RelationsBuilder
     /**
      * Build relations metadata array from relationship definitions.
      *
-     * @param  array<int, array<string, mixed>> $relationships Relationship definitions from askForRelationships()
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions from askForRelationships()
      * @return array<string, array<string, mixed>> Associative array of relation_name => metadata_array
      */
     public function build(array $relationships): array
@@ -30,7 +30,7 @@ class RelationsBuilder
         foreach ($relationships as $rel) {
             $entry = [
                 'type' => $rel['type'],
-                'model' => ArrayRenderer::EXPRESSION_PREFIX . '\\App\\Models\\' . $rel['target'] . '::class',
+                'model' => ArrayRenderer::EXPRESSION_PREFIX.'\\App\\Models\\'.$rel['target'].'::class',
                 'display_field' => $rel['display_field'],
             ];
 

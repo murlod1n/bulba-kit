@@ -27,8 +27,8 @@ class ArrayRenderer
      * indentation, and trailing comma. Suitable for multi-line array content
      * inside return [...] blocks.
      *
-     * @param  array<int|string, mixed> $array      The array to render
-     * @param  int   $indentLevel Number of indentation levels (each level = 4 spaces)
+     * @param  array<int|string, mixed>  $array  The array to render
+     * @param  int  $indentLevel  Number of indentation levels (each level = 4 spaces)
      * @return string PHP code string, or empty string if array is empty
      */
     public function render(array $array, int $indentLevel = 3): string
@@ -42,9 +42,9 @@ class ArrayRenderer
 
         foreach ($array as $key => $value) {
             if (is_int($key)) {
-                $lines[] = $indent . $this->renderValue($value) . ',';
+                $lines[] = $indent.$this->renderValue($value).',';
             } else {
-                $lines[] = $indent . "'{$key}' => " . $this->renderValue($value) . ',';
+                $lines[] = $indent."'{$key}' => ".$this->renderValue($value).',';
             }
         }
 
@@ -57,7 +57,7 @@ class ArrayRenderer
      * Handles arrays (recursive, inline format), booleans, null, integers,
      * floats, and strings (with addslashes escaping).
      *
-     * @param  mixed $value The value to render
+     * @param  mixed  $value  The value to render
      * @return string PHP code representation of the value
      */
     public function renderValue(mixed $value): string
@@ -68,10 +68,11 @@ class ArrayRenderer
                 if (is_int($k)) {
                     $parts[] = $this->renderValue($v);
                 } else {
-                    $parts[] = "'{$k}' => " . $this->renderValue($v);
+                    $parts[] = "'{$k}' => ".$this->renderValue($v);
                 }
             }
-            return '[' . implode(', ', $parts) . ']';
+
+            return '['.implode(', ', $parts).']';
         }
 
         if (is_bool($value)) {
@@ -90,7 +91,7 @@ class ArrayRenderer
             return substr($value, strlen(self::EXPRESSION_PREFIX));
         }
 
-        return "'" . addslashes((string) $value) . "'";
+        return "'".addslashes((string) $value)."'";
     }
 
     /**
@@ -99,12 +100,12 @@ class ArrayRenderer
      * Use this for values that must be evaluated as PHP code at runtime
      * (e.g., ::class constants) rather than treated as string literals.
      *
-     * @param  string $expression The PHP expression (e.g., 'Post::class')
+     * @param  string  $expression  The PHP expression (e.g., 'Post::class')
      * @return string Marked expression string
      */
     public function expr(string $expression): string
     {
-        return self::EXPRESSION_PREFIX . $expression;
+        return self::EXPRESSION_PREFIX.$expression;
     }
 
     /**
@@ -114,7 +115,7 @@ class ArrayRenderer
      * Used for ::class constants and other PHP expressions that must
      * be evaluated at runtime rather than treated as string literals.
      *
-     * @param  string $value The PHP expression to render
+     * @param  string  $value  The PHP expression to render
      * @return string Raw PHP expression string
      */
     public function renderExpression(string $value): string

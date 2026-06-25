@@ -32,7 +32,7 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('bulba.database', 'sqlite');
         $app['config']->set('bulba.controller_namespace', 'App\\Http\\Controllers\\Admin');
         $app['config']->set('bulba.resource_namespace', 'App\\Resources');
-        $app['config']->set('bulba.react_pages_path', 'Admin');
+        $app['config']->set('bulba.react_pages_path', 'admin');
         $app['config']->set('bulba.auto_register_routes', false);
         $app['config']->set('bulba.ai_enabled', false);
     }

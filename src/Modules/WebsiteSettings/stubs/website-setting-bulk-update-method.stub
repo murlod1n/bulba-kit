@@ -1,0 +1,11 @@
+
+    public function bulkUpdate(Request $request)
+    {
+        $settings = $request->input('settings', []);
+
+        foreach ($settings as $key => $value) {
+            WebsiteSetting::where('key', $key)->update(['value' => $value]);
+        }
+
+        return back()->with('success', 'Settings saved.');
+    }

@@ -2,9 +2,9 @@
 
 namespace Nktlksvch\BulbaKit\Console\Commands\Concerns;
 
-use function Laravel\Prompts\note;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\info;
+use function Laravel\Prompts\note;
 
 /**
  * DisplaysSummary Concern
@@ -17,15 +17,15 @@ trait DisplaysSummary
     /**
      * Display a summary of all collected data and ask for generation confirmation.
      *
-     * @param  string $name            Resource name
-     * @param  array<int, array<string, mixed>>  $fields          Field definitions
-     * @param  array<int, array<string, mixed>>  $relationships   Relationship definitions
-     * @param  array<int, array<string, mixed>>  $aiFields        AI generation field configs
-     * @param  bool   $withTimestamps  Whether to include timestamps
-     * @param  bool   $withSoftDeletes Whether to include soft deletes
-     * @param  string $controllerType  Controller type (inertia/api)
-     * @param  array<int, string>  $controllerMethods Selected controller methods
-     * @return bool   True if user confirms generation, false otherwise
+     * @param  string  $name  Resource name
+     * @param  array<int, array<string, mixed>>  $fields  Field definitions
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
+     * @param  array<int, array<string, mixed>>  $aiFields  AI generation field configs
+     * @param  bool  $withTimestamps  Whether to include timestamps
+     * @param  bool  $withSoftDeletes  Whether to include soft deletes
+     * @param  string  $controllerType  Controller type (inertia/api)
+     * @param  array<int, string>  $controllerMethods  Selected controller methods
+     * @return bool True if user confirms generation, false otherwise
      */
     protected function displaySummary(
         string $name,
@@ -53,14 +53,14 @@ trait DisplaysSummary
     /**
      * Display fields summary.
      *
-     * @param array<int, array<string, mixed>> $fields Field definitions
+     * @param  array<int, array<string, mixed>>  $fields  Field definitions
      */
     protected function displayFieldsSummary(array $fields): void
     {
-        note("Fields:");
+        note('Fields:');
         foreach ($fields as $field) {
-            $mods = !empty($field['modifiers'])
-                ? ' (' . implode(', ', array_keys($field['modifiers'])) . ')'
+            $mods = ! empty($field['modifiers'])
+                ? ' ('.implode(', ', array_keys($field['modifiers'])).')'
                 : '';
             note("  - {$field['name']}: {$field['type']}{$mods}");
         }
@@ -69,8 +69,8 @@ trait DisplaysSummary
     /**
      * Display options summary (timestamps, soft deletes).
      *
-     * @param bool $withTimestamps  Whether timestamps are enabled
-     * @param bool $withSoftDeletes Whether soft deletes are enabled
+     * @param  bool  $withTimestamps  Whether timestamps are enabled
+     * @param  bool  $withSoftDeletes  Whether soft deletes are enabled
      */
     protected function displayOptionsSummary(bool $withTimestamps, bool $withSoftDeletes): void
     {
@@ -85,7 +85,7 @@ trait DisplaysSummary
     /**
      * Display relationships summary.
      *
-     * @param array<int, array<string, mixed>> $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
      */
     protected function displayRelationshipsSummary(array $relationships): void
     {
@@ -93,7 +93,7 @@ trait DisplaysSummary
             return;
         }
 
-        note("Relationships:");
+        note('Relationships:');
         foreach ($relationships as $rel) {
             $extra = '';
 
@@ -111,7 +111,7 @@ trait DisplaysSummary
     /**
      * Display AI generation fields summary.
      *
-     * @param array<int, array<string, mixed>> $aiFields AI field configurations
+     * @param  array<int, array<string, mixed>>  $aiFields  AI field configurations
      */
     protected function displayAiFieldsSummary(array $aiFields): void
     {
@@ -119,7 +119,7 @@ trait DisplaysSummary
             return;
         }
 
-        note("AI generated fields:");
+        note('AI generated fields:');
         foreach ($aiFields as $ai) {
             note("  - {$ai['field']} (prompt: {$ai['prompt']})");
         }
@@ -128,12 +128,12 @@ trait DisplaysSummary
     /**
      * Display controller configuration summary.
      *
-     * @param string $controllerType    Controller type (inertia/api)
-     * @param array<int, string>  $controllerMethods Selected controller methods
+     * @param  string  $controllerType  Controller type (inertia/api)
+     * @param  array<int, string>  $controllerMethods  Selected controller methods
      */
     protected function displayControllerSummary(string $controllerType, array $controllerMethods): void
     {
         note("Controller: {$controllerType}");
-        note("Methods: " . implode(', ', $controllerMethods));
+        note('Methods: '.implode(', ', $controllerMethods));
     }
 }

@@ -22,19 +22,19 @@ trait AsksForAiGeneration
      * - Prompt template
      * - Context fields to use for generation
      *
-     * @param  array<int, array<string, mixed>> $fields Field definitions
+     * @param  array<int, array<string, mixed>>  $fields  Field definitions
      * @return array<int, array<string, mixed>> AI field configurations with 'field', 'prompt', and 'context_fields' keys
      */
     protected function askForAiGeneration(array $fields): array
     {
-        if (!config('bulba.ai_enabled', true)) {
+        if (! config('bulba.ai_enabled', true)) {
             return [];
         }
 
         $aiFields = [];
 
         foreach ($fields as $field) {
-            if (!$this->isAiCompatibleField($field)) {
+            if (! $this->isAiCompatibleField($field)) {
                 continue;
             }
 
@@ -49,8 +49,7 @@ trait AsksForAiGeneration
     /**
      * Check if a field type supports AI generation.
      *
-     * @param  array<string, mixed> $field Field definition
-     * @return bool
+     * @param  array<string, mixed>  $field  Field definition
      */
     protected function isAiCompatibleField(array $field): bool
     {
@@ -60,8 +59,8 @@ trait AsksForAiGeneration
     /**
      * Collect AI generation configuration for a single field.
      *
-     * @param  array<string, mixed> $field  Field definition
-     * @param  array<int, array<string, mixed>> $fields All field definitions (for context selection)
+     * @param  array<string, mixed>  $field  Field definition
+     * @param  array<int, array<string, mixed>>  $fields  All field definitions (for context selection)
      * @return array<string, mixed> AI field configuration
      */
     protected function collectAiFieldConfig(array $field, array $fields): array

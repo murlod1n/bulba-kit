@@ -161,4 +161,65 @@ class FieldsBuilderTest extends TestCase
         $this->assertSame('First Name', $result[0]['label']);
         $this->assertSame('Created At', $result[1]['label']);
     }
+
+    public function test_image_field_generates_virtual_fields(): void
+    {
+        $fields = [
+            ['name' => 'title', 'type' => 'string', 'modifiers' => ['length' => 255]],
+            ['name' => 'image', 'type' => 'image', 'modifiers' => ['collection' => 'image', 'thumb_width' => 200, 'thumb_height' => 200, 'single' => true]],
+        ];
+
+        $result = $this->builder->build($fields, []);
+
+        // Should have: title + image_url + image_thumb + image_alt = 4 fields
+        $this->assertCount(4, $result);
+
+        $names = array_column($result, 'name');
+        $this->assertContains('title', $names);
+        $this->assertContains('image_url', $names);
+        $this->assertContains('image_thumb', $names);
+        $this->assertContains('image_alt', $names);
+    }
+
+    public function test_image_field_url_is_read_only(): void
+    {
+        $fields = [
+            ['name' => 'photo', 'type' => 'image', 'modifiers' => ['collection' => 'photo', 'thumb_width' => 100, 'thumb_height' => 100, 'single' => true]],
+        ];
+
+        $result = $this->builder->build($fields, []);
+
+        $urlField = collect($result)->firstWhere('name', 'photo_url');
+        $this->assertNotNull($urlField);
+        $this->assertTrue($urlField['readOnly']);
+
+        $thumbField = collect($result)->firstWhere('name', 'photo_thumb');
+        $this->assertNotNull($thumbField);
+        $this->assertTrue($thumbField['readOnly']);
+    }
+
+    public function test_image_field_alt_is_nullable(): void
+    {
+        $fields = [
+            ['name' => 'photo', 'type' => 'image', 'modifiers' => ['collection' => 'photo', 'thumb_width' => 100, 'thumb_height' => 100, 'single' => true]],
+        ];
+
+        $result = $this->builder->build($fields, []);
+
+        $altField = collect($result)->firstWhere('name', 'photo_alt');
+        $this->assertNotNull($altField);
+        $this->assertTrue($altField['nullable']);
+    }
+
+    public function test_image_field_not_present_as_original_field(): void
+    {
+        $fields = [
+            ['name' => 'photo', 'type' => 'image', 'modifiers' => ['collection' => 'photo', 'thumb_width' => 100, 'thumb_height' => 100, 'single' => true]],
+        ];
+
+        $result = $this->builder->build($fields, []);
+
+        $names = array_column($result, 'name');
+        $this->assertNotContains('photo', $names);
+    }
 }

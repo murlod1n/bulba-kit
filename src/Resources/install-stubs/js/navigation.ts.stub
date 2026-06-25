@@ -1,0 +1,10 @@
+import type { NavGroup } from '@/types/navigation';
+
+export const navigation: NavGroup[] = [
+    {
+        label: 'General',
+        items: [
+            { title: 'Dashboard', href: '/admin/dashboard', icon: 'layout-grid' },
+        ],
+    },
+];

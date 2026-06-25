@@ -1,0 +1,234 @@
+import React, { useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { PlusIcon, TrashIcon } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+
+interface RedirectItem {
+    id: number;
+    url_from: string;
+    url_to: string;
+    status_code: number;
+    is_active: boolean;
+}
+
+interface Paginator<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+}
+
+interface PageProps {
+    items: Paginator<RedirectItem> | RedirectItem[];
+    [key: string]: unknown;
+}
+
+export default function Index() {
+    const { items } = usePage<PageProps>().props;
+    const data = Array.isArray(items) ? items : items.data;
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [showCreate, setShowCreate] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const [newRedirect, setNewRedirect] = useState({
+        url_from: '',
+        url_to: '',
+        status_code: 301,
+        is_active: true,
+    });
+
+    const handleCreate = () => {
+        setProcessing(true);
+        router.post('/admin/redirects', newRedirect, {
+            onFinish: () => {
+                setProcessing(false);
+                setShowCreate(false);
+                setNewRedirect({ url_from: '', url_to: '', status_code: 301, is_active: true });
+            },
+        });
+    };
+
+    const handleDelete = () => {
+        if (deleteId !== null) {
+            router.delete(`/admin/redirects/${deleteId}`, {
+                onFinish: () => setDeleteId(null),
+            });
+        }
+    };
+
+    const handleToggle = (id: number, currentValue: boolean) => {
+        router.put(`/admin/redirects/${id}`, {
+            is_active: !currentValue,
+        });
+    };
+
+    return (
+        <>
+            <Head title="Redirects" />
+
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Redirects</CardTitle>
+                    <Button onClick={() => setShowCreate(true)}>
+                        <PlusIcon data-icon="inline-start" />
+                        Add Redirect
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>From</TableHead>
+                                <TableHead>To</TableHead>
+                                <TableHead className="w-[100px]">Status</TableHead>
+                                <TableHead className="w-[80px]">Active</TableHead>
+                                <TableHead className="w-[80px] text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {data.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                                        No redirects yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {data.map((item) => (
+                                <TableRow key={item.id}>
+                                    <TableCell className="font-mono text-sm">{item.url_from}</TableCell>
+                                    <TableCell className="font-mono text-sm">{item.url_to}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={item.status_code === 301 ? 'default' : 'secondary'}>
+                                            {item.status_code}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Checkbox
+                                            checked={item.is_active}
+                                            onCheckedChange={() => handleToggle(item.id, item.is_active)}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setDeleteId(item.id)}
+                                        >
+                                            <TrashIcon className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
+            <Dialog open={showCreate} onOpenChange={setShowCreate}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add Redirect</DialogTitle>
+                    </DialogHeader>
+                    <FieldGroup className="gap-4">
+                        <Field>
+                            <FieldLabel htmlFor="url_from">From URL</FieldLabel>
+                            <Input
+                                id="url_from"
+                                value={newRedirect.url_from}
+                                onChange={(e) => setNewRedirect((p) => ({ ...p, url_from: e.target.value }))}
+                                placeholder="/old-page"
+                            />
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="url_to">To URL</FieldLabel>
+                            <Input
+                                id="url_to"
+                                value={newRedirect.url_to}
+                                onChange={(e) => setNewRedirect((p) => ({ ...p, url_to: e.target.value }))}
+                                placeholder="/new-page"
+                            />
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="status_code">Status Code</FieldLabel>
+                            <Select
+                                value={String(newRedirect.status_code)}
+                                onValueChange={(v) =>
+                                    setNewRedirect((p) => ({ ...p, status_code: Number(v) }))
+                                }
+                            >
+                                <SelectTrigger id="status_code">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="301">301 - Permanent</SelectItem>
+                                    <SelectItem value="302">302 - Temporary</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </Field>
+                    </FieldGroup>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setShowCreate(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleCreate} disabled={processing}>
+                            {processing && <Spinner data-icon="inline-start" />}
+                            {processing ? 'Creating...' : 'Create'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete this redirect.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
+}

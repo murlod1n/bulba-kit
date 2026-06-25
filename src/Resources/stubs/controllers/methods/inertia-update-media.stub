@@ -1,0 +1,10 @@
+public function update(Request $request, $id)
+    {
+        $item = {{ model }}::findOrFail($id);
+        $validated = $request->validate($this->resource->validationRules());
+        $item->update($validated);
+        $this->syncBelongsToMany($item, $request);
+        $this->handleMediaUpload($item, $request);
+        $this->handleMediaRemoval($item, $request);
+        return redirect()->route('{{ modelLowerPlural }}.index');
+    }

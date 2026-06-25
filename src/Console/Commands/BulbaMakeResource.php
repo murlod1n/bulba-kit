@@ -27,13 +27,14 @@ use function Laravel\Prompts\text;
  */
 class BulbaMakeResource extends Command
 {
+    use AsksForAiGeneration;
     use AsksForFields;
     use AsksForRelationships;
-    use AsksForAiGeneration;
     use DisplaysSummary;
     use RunsGenerators;
 
     protected $signature = 'bulba:make {name?}';
+
     protected $description = 'Generate a complete admin CRUD resource';
 
     /**
@@ -53,12 +54,10 @@ class BulbaMakeResource extends Command
      * 6. Display summary and confirm
      * 7. Run all generators
      * 8. Display post-generation instructions
-     *
-     * @return void
      */
     public function handle(): void
     {
-        $this->schema = new SchemaInspector();
+        $this->schema = new SchemaInspector;
 
         // Step 1: Collect resource name
         $name = $this->collectResourceName();
@@ -87,8 +86,9 @@ class BulbaMakeResource extends Command
             $options['controllerMethods']
         );
 
-        if (!$confirmed) {
+        if (! $confirmed) {
             info('Cancelled.');
+
             return;
         }
 
@@ -118,12 +118,12 @@ class BulbaMakeResource extends Command
     {
         $name = $this->argument('name');
 
-        if (!$name) {
+        if (! $name) {
             $name = text(
                 label: 'What is the resource name? (Post, Comment, Car)',
                 placeholder: 'Post',
                 required: true,
-                validate: fn($v) => !preg_match('/^[A-Z][a-zA-Z]+$/', $v)
+                validate: fn ($v) => ! preg_match('/^[A-Z][a-zA-Z]+$/', $v)
                     ? 'Must be a valid class name like "Post"'
                     : null
             );
@@ -143,6 +143,7 @@ class BulbaMakeResource extends Command
             return $this->askForFields();
         } catch (Exception $e) {
             $this->error($e->getMessage());
+
             return [];
         }
     }

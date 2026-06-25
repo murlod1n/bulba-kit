@@ -1,0 +1,43 @@
+<?php
+
+namespace {{ namespace }};
+
+use Closure;
+use Illuminate\Http\Request;
+use App\Models\Redirect;
+use Illuminate\Support\Facades\Cache;
+
+class RedirectMiddleware
+{
+    /**
+     * Handle an incoming request.
+     *
+     * Checks the request path against cached active redirects.
+     * If a match is found, performs the redirect with the configured status code.
+     * Cache is refreshed every hour and invalidated on redirect changes.
+     */
+    public function handle(Request $request, Closure $next)
+    {
+        $path = $request->path();
+
+        if ($path === '/') {
+            return $next($request);
+        }
+
+        $redirects = Cache::remember('admin_redirects', 3600, function () {
+            return Redirect::where('is_active', true)
+                ->pluck('url_to', 'url_from')
+                ->toArray();
+        });
+
+        $checkPath = '/' . $path;
+
+        if (isset($redirects[$checkPath])) {
+            $redirect = Redirect::where('url_from', $checkPath)->first();
+
+            return redirect($redirects[$checkPath], $redirect?->status_code ?? 301);
+        }
+
+        return $next($request);
+    }
+}

@@ -65,6 +65,7 @@ interface PageProps {
     };
     fields: FieldDef[];
     relations: Record<string, Record<string, RelationDef>>;
+    [key: string]: unknown;
 }
 
 export default function Index() {

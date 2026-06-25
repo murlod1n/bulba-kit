@@ -1,0 +1,151 @@
+import React, { useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { XIcon, UploadIcon, SparklesIcon } from 'lucide-react';
+
+interface ImageUploadProps {
+    label: string;
+    value?: string | null;
+    thumb?: string | null;
+    alt?: string | null;
+    error?: string;
+    onChange: (file: File | null) => void;
+    onRemove: () => void;
+    onAltChange: (alt: string) => void;
+    onGenerateAlt?: () => void;
+    generatingAlt?: boolean;
+}
+
+export function ImageUpload({
+    label,
+    value,
+    thumb,
+    alt,
+    error,
+    onChange,
+    onRemove,
+    onAltChange,
+    onGenerateAlt,
+    generatingAlt = false,
+}: ImageUploadProps) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => setPreview(ev.target?.result as string);
+            reader.readAsDataURL(file);
+            onChange(file);
+        }
+    };
+
+    const handleRemove = () => {
+        setPreview(null);
+        if (inputRef.current) inputRef.current.value = '';
+        onRemove();
+    };
+
+    const displayUrl = preview || thumb || value;
+
+    return (
+        <Field data-invalid={!!error}>
+            <FieldLabel>{label}</FieldLabel>
+
+            <div className="flex items-start gap-4">
+                {displayUrl && (
+                    <div className="relative shrink-0">
+                        <img
+                            src={displayUrl}
+                            alt={alt || label}
+                            className="h-24 w-24 rounded-md border object-cover"
+                        />
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -right-2 -top-2 h-6 w-6"
+                            onClick={handleRemove}
+                        >
+                            <XIcon className="h-3 w-3" />
+                        </Button>
+                    </div>
+                )}
+
+                <div className="flex flex-col gap-2 flex-1">
+                    {!displayUrl && (
+                        <input
+                            ref={inputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+                    )}
+                    {!displayUrl && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => inputRef.current?.click()}
+                        >
+                            <UploadIcon data-icon="inline-start" />
+                            Choose Image
+                        </Button>
+                    )}
+
+                    {displayUrl && (
+                        <input
+                            ref={inputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+                    )}
+                    {displayUrl && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => inputRef.current?.click()}
+                        >
+                            <UploadIcon data-icon="inline-start" />
+                            Replace
+                        </Button>
+                    )}
+
+                    <Field className="mt-2">
+                        <FieldLabel htmlFor={`${label}-alt`} className="text-xs text-muted-foreground">
+                            Alt Text
+                        </FieldLabel>
+                        <div className="flex gap-2">
+                            <Input
+                                id={`${label}-alt`}
+                                value={alt ?? ''}
+                                onChange={(e) => onAltChange(e.target.value)}
+                                placeholder="Image description"
+                                className="flex-1"
+                            />
+                            {onGenerateAlt && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={onGenerateAlt}
+                                    disabled={generatingAlt || !value}
+                                    title="Generate alt text with AI"
+                                >
+                                    <SparklesIcon className={`h-4 w-4 ${generatingAlt ? 'animate-spin' : ''}`} />
+                                </Button>
+                            )}
+                        </div>
+                    </Field>
+                </div>
+            </div>
+
+            {error && <FieldDescription>{error}</FieldDescription>}
+        </Field>
+    );
+}

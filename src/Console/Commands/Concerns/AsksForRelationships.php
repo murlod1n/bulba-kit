@@ -25,16 +25,16 @@ trait AsksForRelationships
     /**
      * Interactively collect relationship definitions from the user.
      *
-     * @param  array<int, array<string, mixed>> &$fields        Current field definitions (passed by reference for FK additions)
-     * @param  string $currentModel  Name of the model being created
-     * @param  SchemaInspector $schema Schema inspector instance
-     * @return array<int, array<string, mixed>>  Relationship definitions with inverse metadata
+     * @param  array<int, array<string, mixed>>  &$fields  Current field definitions (passed by reference for FK additions)
+     * @param  string  $currentModel  Name of the model being created
+     * @param  SchemaInspector  $schema  Schema inspector instance
+     * @return array<int, array<string, mixed>> Relationship definitions with inverse metadata
      */
     protected function askForRelationships(array &$fields, string $currentModel, SchemaInspector $schema): array
     {
         $relationships = [];
 
-        if (!confirm('Add relationships to other tables?', default: false)) {
+        if (! confirm('Add relationships to other tables?', default: false)) {
             return $relationships;
         }
 
@@ -50,7 +50,7 @@ trait AsksForRelationships
                 $relationships[] = $this->askForStandardRelationship($existingTables, $currentTable, $currentModel, $fkLocation, $schema);
             }
 
-            if (!confirm('Add another relationship?', default: false)) {
+            if (! confirm('Add another relationship?', default: false)) {
                 break;
             }
         }
@@ -61,7 +61,7 @@ trait AsksForRelationships
     /**
      * Ask where the foreign key should be placed.
      *
-     * @param  string $currentTable Current table name
+     * @param  string  $currentTable  Current table name
      * @return string 'current', 'target', or 'pivot'
      */
     protected function askForFkLocation(string $currentTable): string
@@ -70,8 +70,8 @@ trait AsksForRelationships
             label: 'Where should the foreign key be placed?',
             options: [
                 'current' => "On current table ({$currentTable})",
-                'target'  => 'On related table',
-                'pivot'   => 'Pivot table (many-to-many)',
+                'target' => 'On related table',
+                'pivot' => 'Pivot table (many-to-many)',
             ]
         );
     }
@@ -79,12 +79,12 @@ trait AsksForRelationships
     /**
      * Build relationship data for a standard (non-pivot) relationship.
      *
-     * @param  array<int, string>  $existingTables Available tables
-     * @param  string $currentTable   Current table name
-     * @param  string $currentModel   Current model name
-     * @param  string $fkLocation     'current' or 'target'
-     * @param  SchemaInspector $schema Schema inspector instance
-     * @return array<string, mixed>  Relationship definition with inverse metadata
+     * @param  array<int, string>  $existingTables  Available tables
+     * @param  string  $currentTable  Current table name
+     * @param  string  $currentModel  Current model name
+     * @param  string  $fkLocation  'current' or 'target'
+     * @param  SchemaInspector  $schema  Schema inspector instance
+     * @return array<string, mixed> Relationship definition with inverse metadata
      */
     protected function askForStandardRelationship(
         array $existingTables,
@@ -104,7 +104,7 @@ trait AsksForRelationships
 
         // Determine relation types and names based on FK location
         if ($fkLocation === 'current') {
-            $fk = Str::snake($targetModel) . '_id';
+            $fk = Str::snake($targetModel).'_id';
             $currentRelType = 'belongsTo';
             $inverseType = ($relType === 'one') ? 'hasOne' : 'hasMany';
             $relName = Str::camel($targetModel);
@@ -112,7 +112,7 @@ trait AsksForRelationships
                 ? Str::camel(Str::singular($currentModel))
                 : Str::camel(Str::plural($currentModel));
         } else {
-            $fk = Str::snake($currentModel) . '_id';
+            $fk = Str::snake($currentModel).'_id';
             $currentRelType = ($relType === 'one') ? 'hasOne' : 'hasMany';
             $inverseType = 'belongsTo';
             $relName = ($relType === 'one')
@@ -146,11 +146,11 @@ trait AsksForRelationships
     /**
      * Build relationship data for a pivot (many-to-many) relationship.
      *
-     * @param  array<int, string>  $existingTables Available tables
-     * @param  string $currentTable   Current table name
-     * @param  string $currentModel   Current model name
-     * @param  SchemaInspector $schema Schema inspector instance
-     * @return array<string, mixed>  Relationship definition with inverse metadata
+     * @param  array<int, string>  $existingTables  Available tables
+     * @param  string  $currentTable  Current table name
+     * @param  string  $currentModel  Current model name
+     * @param  SchemaInspector  $schema  Schema inspector instance
+     * @return array<string, mixed> Relationship definition with inverse metadata
      */
     protected function askForPivotRelationship(
         array $existingTables,
@@ -191,7 +191,7 @@ trait AsksForRelationships
         return select(
             label: 'Relationship type?',
             options: [
-                'one'  => 'One to one (hasOne)',
+                'one' => 'One to one (hasOne)',
                 'many' => 'One to many (hasMany)',
             ]
         );
@@ -200,16 +200,16 @@ trait AsksForRelationships
     /**
      * Ask user to select a table from existing tables or enter manually.
      *
-     * @param  array<int, string>  $existingTables Available tables
-     * @param  string $label          Prompt label
+     * @param  array<int, string>  $existingTables  Available tables
+     * @param  string  $label  Prompt label
      * @return string Table name
      */
     protected function askForTable(array $existingTables, string $label): string
     {
-        if (!empty($existingTables)) {
+        if (! empty($existingTables)) {
             $source = array_combine($existingTables, $existingTables)
-                    |> (fn($x) => array_merge($x, ['__manual__' => 'Enter manually...']))
-                    |> (fn($x) => select(label: $label, options: $x));
+                    |> (fn ($x) => array_merge($x, ['__manual__' => 'Enter manually...']))
+                    |> (fn ($x) => select(label: $label, options: $x));
 
             if ($source !== '__manual__') {
                 return $source;
@@ -223,13 +223,13 @@ trait AsksForRelationships
      * Ask user to select a column from a list of columns.
      *
      * @param  array<int, string>  $columns  Available column names
-     * @param  string $label    Prompt label
-     * @param  string $default  Default column name
+     * @param  string  $label  Prompt label
+     * @param  string  $default  Default column name
      * @return string Selected column name
      */
     protected function askForColumn(array $columns, string $label, string $default = 'id'): string
     {
-        if (!empty($columns)) {
+        if (! empty($columns)) {
             return select(
                 label: $label,
                 options: array_combine($columns, $columns),
@@ -243,20 +243,20 @@ trait AsksForRelationships
     /**
      * Ask user to select or create a pivot table for many-to-many relationships.
      *
-     * @param  array<int, string>  $existingTables Available tables
-     * @param  string $targetTable    Target table name
-     * @param  string $currentModel   Current model name
+     * @param  array<int, string>  $existingTables  Available tables
+     * @param  string  $targetTable  Target table name
+     * @param  string  $currentModel  Current model name
      * @return string Pivot table name
      */
     protected function askForPivotTable(array $existingTables, string $targetTable, string $currentModel): string
     {
         $suggested = $this->buildPivotTableName($targetTable, $currentModel);
 
-        if (!empty($existingTables)) {
+        if (! empty($existingTables)) {
             $options = [];
 
             if (in_array($suggested, $existingTables)) {
-                $options[$suggested] = $suggested . ' (recommended)';
+                $options[$suggested] = $suggested.' (recommended)';
             }
 
             $options = array_merge($options, array_combine($existingTables, $existingTables));
@@ -281,14 +281,15 @@ trait AsksForRelationships
      * Uses Laravel convention: alphabetically sorted plural table names joined with underscore.
      * Example: 'posts' and 'tags' become 'posts_tags'
      *
-     * @param  string $table1  First table name
-     * @param  string $model2  Second model name
+     * @param  string  $table1  First table name
+     * @param  string  $model2  Second model name
      * @return string Pivot table name
      */
     protected function buildPivotTableName(string $table1, string $model2): string
     {
         $tables = [Str::snake(Str::plural($table1)), Str::snake(Str::plural($model2))];
         sort($tables);
+
         return implode('_', $tables);
     }
 }

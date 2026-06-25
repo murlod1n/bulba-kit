@@ -64,7 +64,7 @@ class {{ model }}Controller extends Controller
         if (! $aiConfig || ! $aiConfig['enabled']) {
             return;
         }
-        // Здесь будет вызов AI-сервиса для генерации значений
-        // Например: app(AiService::class)->generate($item, $aiConfig);
     }
+
+{{ mediaMethods }}
 }
