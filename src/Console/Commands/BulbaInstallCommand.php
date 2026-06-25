@@ -4,6 +4,7 @@ namespace Nktlksvch\BulbaKit\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\Process\Process;
 
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\note;
@@ -12,15 +13,18 @@ use function Laravel\Prompts\warning;
 class BulbaInstallCommand extends Command
 {
     protected $signature = 'bulba:install {--force : Overwrite existing files}';
+
     protected $description = 'Install the complete BulbaKit React admin panel infrastructure';
 
     protected string $stubsPath;
+
     protected int $step = 0;
+
     protected int $totalSteps = 11;
 
     public function handle(): void
     {
-        $this->stubsPath = dirname(__DIR__, 2) . '/Resources/install-stubs';
+        $this->stubsPath = dirname(__DIR__, 2).'/Resources/install-stubs';
 
         info('🚀 BulbaKit Installer');
         note('Setting up React + Inertia + Tailwind + shadcn/ui admin panel...');
@@ -55,34 +59,35 @@ class BulbaInstallCommand extends Command
         $this->step('Installing PHP dependencies');
 
         $packages = [];
-        if (!$this->isPackageInstalled('inertiajs/inertia-laravel')) {
+        if (! $this->isPackageInstalled('inertiajs/inertia-laravel')) {
             $packages[] = 'inertiajs/inertia-laravel:^3.0';
         }
-        if (!$this->isPackageInstalled('laravel/wayfinder')) {
+        if (! $this->isPackageInstalled('laravel/wayfinder')) {
             $packages[] = 'laravel/wayfinder:^0.1.14';
         }
-        if (!$this->isPackageInstalled('laravel/fortify')) {
+        if (! $this->isPackageInstalled('laravel/fortify')) {
             $packages[] = 'laravel/fortify:^1.37.2';
         }
 
         $devPackages = [];
-        if (!$this->isPackageInstalled('larastan/larastan')) {
+        if (! $this->isPackageInstalled('larastan/larastan')) {
             $devPackages[] = 'larastan/larastan:^3.9';
         }
 
         if (empty($packages) && empty($devPackages)) {
             note('  All PHP dependencies already installed.');
+
             return;
         }
 
-        if (!empty($packages)) {
-            note('  Installing: ' . implode(', ', $packages));
-            $this->executeCommand('composer require ' . implode(' ', $packages) . ' -W --no-interaction');
+        if (! empty($packages)) {
+            note('  Installing: '.implode(', ', $packages));
+            $this->executeCommand('composer require '.implode(' ', $packages).' -W --no-interaction');
         }
 
-        if (!empty($devPackages)) {
-            note('  Installing dev: ' . implode(', ', $devPackages));
-            $this->executeCommand('composer require --dev ' . implode(' ', $devPackages) . ' -W --no-interaction');
+        if (! empty($devPackages)) {
+            note('  Installing dev: '.implode(', ', $devPackages));
+            $this->executeCommand('composer require --dev '.implode(' ', $devPackages).' -W --no-interaction');
         }
     }
 
@@ -95,6 +100,7 @@ class BulbaInstallCommand extends Command
             $packageJson = json_decode(File::get($packageJsonPath), true);
             if (isset($packageJson['dependencies']['react'])) {
                 note('  NPM dependencies already installed.');
+
                 return;
             }
         }
@@ -122,10 +128,10 @@ class BulbaInstallCommand extends Command
         ];
 
         note('  Installing production dependencies...');
-        $this->executeCommand('npm install ' . implode(' ', $packages));
+        $this->executeCommand('npm install '.implode(' ', $packages));
 
         note('  Installing dev dependencies...');
-        $this->executeCommand('npm install -D ' . implode(' ', $devPackages));
+        $this->executeCommand('npm install -D '.implode(' ', $devPackages));
     }
 
     protected function initShadcn(): void
@@ -133,7 +139,7 @@ class BulbaInstallCommand extends Command
         $this->step('Initializing shadcn/ui');
 
         $componentsJsonPath = base_path('components.json');
-        if (File::exists($componentsJsonPath) && !$this->option('force')) {
+        if (File::exists($componentsJsonPath) && ! $this->option('force')) {
             note('  components.json already exists, skipping shadcn init.');
         } else {
             if (File::exists($componentsJsonPath)) {
@@ -150,27 +156,28 @@ class BulbaInstallCommand extends Command
             'toggle', 'toggle-group', 'collapsible', 'navigation-menu', 'breadcrumb', 'sheet',
             'checkbox', 'input-otp', 'sonner', 'spinner', 'alert',
             'icon', 'placeholder-pattern',
+            'field', 'table', 'textarea', 'pagination',
         ];
 
-        note('  Installing ' . count($components) . ' shadcn components...');
+        note('  Installing '.count($components).' shadcn components...');
         $failed = [];
 
         foreach ($components as $component) {
             $this->line("    Installing: {$component}");
             $result = $this->executeCommand("npx shadcn@latest add {$component} --yes");
-            if (!$result) {
+            if (! $result) {
                 $this->line("    Retrying: {$component}");
                 sleep(2);
                 $result = $this->executeCommand("npx shadcn@latest add {$component} --yes");
-                if (!$result) {
+                if (! $result) {
                     $failed[] = $component;
                     $this->warn("    Failed: {$component}");
                 }
             }
         }
 
-        if (!empty($failed)) {
-            warning('  Failed to install: ' . implode(', ', $failed));
+        if (! empty($failed)) {
+            warning('  Failed to install: '.implode(', ', $failed));
         }
     }
 
@@ -359,12 +366,12 @@ class BulbaInstallCommand extends Command
     protected function updateEnvExample(): void
     {
         $envExamplePath = base_path('.env.example');
-        if (!File::exists($envExamplePath)) {
+        if (! File::exists($envExamplePath)) {
             return;
         }
 
         $content = File::get($envExamplePath);
-        if (!str_contains($content, 'VITE_APP_NAME')) {
+        if (! str_contains($content, 'VITE_APP_NAME')) {
             $content .= "\nVITE_APP_NAME=\"\${APP_NAME}\"\n";
             File::put($envExamplePath, $content);
             note('  Added VITE_APP_NAME to .env.example');
@@ -380,22 +387,24 @@ class BulbaInstallCommand extends Command
 
     protected function copyStub(string $stubPath, string $destination): void
     {
-        $fullStubPath = $this->stubsPath . '/' . $stubPath;
+        $fullStubPath = $this->stubsPath.'/'.$stubPath;
 
-        if (!File::exists($fullStubPath)) {
+        if (! File::exists($fullStubPath)) {
             warning("  Stub not found: {$stubPath}");
+
             return;
         }
 
         File::ensureDirectoryExists(dirname($destination));
         File::copy($fullStubPath, $destination);
-        note("  Created: " . str_replace(base_path() . '/', '', $destination));
+        note('  Created: '.str_replace(base_path().'/', '', $destination));
     }
 
     protected function copyStubIfNotExists(string $stubPath, string $destination): void
     {
-        if (File::exists($destination) && !$this->option('force')) {
-            note("  Skipped (exists): " . str_replace(base_path() . '/', '', $destination));
+        if (File::exists($destination) && ! $this->option('force')) {
+            note('  Skipped (exists): '.str_replace(base_path().'/', '', $destination));
+
             return;
         }
 
@@ -405,7 +414,7 @@ class BulbaInstallCommand extends Command
     protected function isPackageInstalled(string $package): bool
     {
         $composerLockPath = base_path('composer.lock');
-        if (!File::exists($composerLockPath)) {
+        if (! File::exists($composerLockPath)) {
             return false;
         }
 
@@ -423,7 +432,7 @@ class BulbaInstallCommand extends Command
 
     protected function executeCommand(string $command): bool
     {
-        $process = \Symfony\Component\Process\Process::fromShellCommandline(
+        $process = Process::fromShellCommandline(
             $command,
             base_path(),
             ['PATH' => getenv('PATH')],
@@ -437,12 +446,13 @@ class BulbaInstallCommand extends Command
             }
         });
 
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             warning("  Command failed: {$command}");
             $errorOutput = $process->getErrorOutput();
-            if (!empty($errorOutput)) {
-                warning("  Error: " . substr($errorOutput, 0, 500));
+            if (! empty($errorOutput)) {
+                warning('  Error: '.substr($errorOutput, 0, 500));
             }
+
             return false;
         }
 

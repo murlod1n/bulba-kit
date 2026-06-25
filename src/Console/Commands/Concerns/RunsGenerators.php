@@ -28,13 +28,13 @@ trait RunsGenerators
      * Then handles inverse relations on existing models/resources.
      *
      * @param string $name            Resource name
-     * @param array  $fields          Field definitions
-     * @param array  $relationships   Relationship definitions
-     * @param array  $aiFields        AI generation field configs
+     * @param array<int, array<string, mixed>>  $fields          Field definitions
+     * @param array<int, array<string, mixed>>  $relationships   Relationship definitions
+     * @param array<int, array<string, mixed>>  $aiFields        AI generation field configs
      * @param bool   $withTimestamps  Whether to include timestamps
      * @param bool   $withSoftDeletes Whether to include soft deletes
      * @param string $controllerType  Controller type (inertia/api)
-     * @param array  $controllerMethods Selected controller methods
+     * @param array<int, string>  $controllerMethods Selected controller methods
      */
     protected function runGenerators(
         string $name,
@@ -58,13 +58,13 @@ trait RunsGenerators
      * Run the main generation steps with a progress bar.
      *
      * @param string $name            Resource name
-     * @param array  $fields          Field definitions
-     * @param array  $relationships   Relationship definitions
-     * @param array  $aiFields        AI generation field configs
+     * @param array<int, array<string, mixed>>  $fields          Field definitions
+     * @param array<int, array<string, mixed>>  $relationships   Relationship definitions
+     * @param array<int, array<string, mixed>>  $aiFields        AI generation field configs
      * @param bool   $withTimestamps  Whether to include timestamps
      * @param bool   $withSoftDeletes Whether to include soft deletes
      * @param string $controllerType  Controller type (inertia/api)
-     * @param array  $controllerMethods Selected controller methods
+     * @param array<int, string>  $controllerMethods Selected controller methods
      */
     protected function runMainGenerators(
         string $name,
@@ -125,7 +125,7 @@ trait RunsGenerators
      * 3. Add inverse relation metadata to target resource
      *
      * @param string $name          Resource name (current model)
-     * @param array  $relationships Relationship definitions
+     * @param array<int, array<string, mixed>>  $relationships Relationship definitions
      */
     protected function runInverseGenerators(string $name, array $relationships): void
     {

@@ -348,11 +348,11 @@ class GenerationPipelineTest extends TestCase
 
         $pagesDir = $this->tempDir . '/resources/js/Pages/Admin/Post';
 
-        $this->assertFileDoesNotExist($pagesDir . '/Index.jsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Create.jsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Edit.jsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Show.jsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Form.jsx');
+        $this->assertFileDoesNotExist($pagesDir . '/Index.tsx');
+        $this->assertFileDoesNotExist($pagesDir . '/Create.tsx');
+        $this->assertFileDoesNotExist($pagesDir . '/Edit.tsx');
+        $this->assertFileDoesNotExist($pagesDir . '/Show.tsx');
+        $this->assertFileDoesNotExist($pagesDir . '/Form.tsx');
 
         // ReactPageGenerator writes to resource_path() which points to the real app
         // In this test we just verify the generator doesn't throw

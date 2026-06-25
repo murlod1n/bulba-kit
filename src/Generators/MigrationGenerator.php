@@ -25,11 +25,11 @@ class MigrationGenerator
      * Generate a new CREATE migration file.
      *
      * @param  string $name            Model/table name
-     * @param  array  $fields          Field definitions from askForFields()
-     * @param  array  $aiFields        AI generation field configs
+     * @param  array<int, array<string, mixed>>  $fields          Field definitions from askForFields()
+     * @param  array<int, array<string, mixed>>  $aiFields        AI generation field configs
      * @param  bool   $withTimestamps  Whether to include timestamps
      * @param  bool   $withSoftDeletes Whether to include soft deletes
-     * @param  array  $relationships   Relationship definitions (for FK constraints)
+     * @param  array<int, array<string, mixed>>  $relationships   Relationship definitions (for FK constraints)
      * @return void
      */
     public function generate(
@@ -121,8 +121,8 @@ class MigrationGenerator
     /**
      * Build field definition lines for the migration.
      *
-     * @param  array $fields   Field definitions
-     * @param  array $aiFields AI generation field configs
+     * @param  array<int, array<string, mixed>> $fields   Field definitions
+     * @param  array<int, array<string, mixed>> $aiFields AI generation field configs
      * @return string Field definition code
      */
     protected function buildFieldDefinitions(array $fields, array $aiFields): string
@@ -168,7 +168,7 @@ class MigrationGenerator
     /**
      * Build foreign key constraint lines for belongsTo relationships.
      *
-     * @param  array $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
      * @return string Foreign key code
      */
     protected function buildForeignKeys(array $relationships): string
@@ -212,7 +212,7 @@ class MigrationGenerator
      * - Cascade on delete
      * - Unique constraint on both FKs
      *
-     * @param  array $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
      * @return void
      */
     protected function generatePivotMigrations(array $relationships): void

@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use Nktlksvch\Grain\AbstractResource;
+use Nktlksvch\BulbaKit\AbstractResource;
 use App\Models\{{ model }};
 
 class {{ class }} extends AbstractResource

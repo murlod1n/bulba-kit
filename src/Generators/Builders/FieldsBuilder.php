@@ -26,9 +26,9 @@ class FieldsBuilder
      * Includes user-defined fields and auto-generated FK fields for belongsTo
      * relationships (unless the FK field is already defined by the user).
      *
-     * @param  array $fields        Field definitions from askForFields()
-     * @param  array $relationships Relationship definitions from askForRelationships()
-     * @return array Array of field descriptor arrays
+     * @param  array<int, array<string, mixed>> $fields        Field definitions from askForFields()
+     * @param  array<int, array<string, mixed>> $relationships Relationship definitions from askForRelationships()
+     * @return array<int, array<string, mixed>> Array of field descriptor arrays
      */
     public function build(array $fields, array $relationships): array
     {

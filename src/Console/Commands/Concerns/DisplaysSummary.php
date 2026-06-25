@@ -18,13 +18,13 @@ trait DisplaysSummary
      * Display a summary of all collected data and ask for generation confirmation.
      *
      * @param  string $name            Resource name
-     * @param  array  $fields          Field definitions
-     * @param  array  $relationships   Relationship definitions
-     * @param  array  $aiFields        AI generation field configs
+     * @param  array<int, array<string, mixed>>  $fields          Field definitions
+     * @param  array<int, array<string, mixed>>  $relationships   Relationship definitions
+     * @param  array<int, array<string, mixed>>  $aiFields        AI generation field configs
      * @param  bool   $withTimestamps  Whether to include timestamps
      * @param  bool   $withSoftDeletes Whether to include soft deletes
      * @param  string $controllerType  Controller type (inertia/api)
-     * @param  array  $controllerMethods Selected controller methods
+     * @param  array<int, string>  $controllerMethods Selected controller methods
      * @return bool   True if user confirms generation, false otherwise
      */
     protected function displaySummary(
@@ -53,7 +53,7 @@ trait DisplaysSummary
     /**
      * Display fields summary.
      *
-     * @param array $fields Field definitions
+     * @param array<int, array<string, mixed>> $fields Field definitions
      */
     protected function displayFieldsSummary(array $fields): void
     {
@@ -85,7 +85,7 @@ trait DisplaysSummary
     /**
      * Display relationships summary.
      *
-     * @param array $relationships Relationship definitions
+     * @param array<int, array<string, mixed>> $relationships Relationship definitions
      */
     protected function displayRelationshipsSummary(array $relationships): void
     {
@@ -111,7 +111,7 @@ trait DisplaysSummary
     /**
      * Display AI generation fields summary.
      *
-     * @param array $aiFields AI field configurations
+     * @param array<int, array<string, mixed>> $aiFields AI field configurations
      */
     protected function displayAiFieldsSummary(array $aiFields): void
     {
@@ -129,7 +129,7 @@ trait DisplaysSummary
      * Display controller configuration summary.
      *
      * @param string $controllerType    Controller type (inertia/api)
-     * @param array  $controllerMethods Selected controller methods
+     * @param array<int, string>  $controllerMethods Selected controller methods
      */
     protected function displayControllerSummary(string $controllerType, array $controllerMethods): void
     {

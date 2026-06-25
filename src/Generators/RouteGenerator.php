@@ -26,7 +26,7 @@ class RouteGenerator
      *
      * @param  string $name    Model name (e.g., 'Post')
      * @param  string $type    Controller type ('inertia' or 'api')
-     * @param  array  $methods Controller methods (unused, for interface compatibility)
+     * @param  array<int, string>  $methods Controller methods (unused, for interface compatibility)
      * @return void
      */
     public function generate(
@@ -96,7 +96,7 @@ class RouteGenerator
      * Get route configuration (prefix and middleware) based on type.
      *
      * @param  string $type Controller type
-     * @return array [prefix, middleware]
+     * @return array{string, array<int, string>} [prefix, middleware]
      */
     protected function getRouteConfig(string $type): array
     {

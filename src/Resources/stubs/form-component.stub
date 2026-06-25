@@ -1,25 +1,53 @@
 import React from 'react';
 import { useForm } from '@inertiajs/react';
 import { store, update } from '@/actions/App/Http/Controllers/Admin/{{ model }}Controller';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@/components/ui/spinner';
 
-function prepareInitialData(initialData, relations) {
+interface FieldDef {
+    name: string;
+    label?: string;
+    type: string;
+}
+
+interface RelationDef {
+    type: string;
+    foreign_key: string;
+    display_field: string;
+}
+
+interface FormProps {
+    fields: FieldDef[];
+    relations: Record<string, RelationDef>;
+    selectOptions: Record<string, Record<string, string>>;
+    initialData?: Record<string, unknown> | null;
+}
+
+function prepareInitialData(initialData: Record<string, unknown> | null | undefined, relations: Record<string, RelationDef>): Record<string, unknown> {
     if (!initialData) return {};
     const formData = { ...initialData };
     Object.entries(relations || {}).forEach(([key, rel]) => {
         if (rel.type === 'belongsToMany' && Array.isArray(formData[key])) {
-            formData[key] = formData[key].map(item => typeof item === 'object' ? item.id : item);
+            formData[key] = (formData[key] as Array<Record<string, unknown> | number>).map(item =>
+                typeof item === 'object' ? (item as Record<string, unknown>).id : item
+            );
         }
         if (rel.type === 'belongsTo' && formData[key] && typeof formData[key] === 'object') {
-            formData[rel.foreign_key] = formData[key].id;
+            formData[rel.foreign_key] = (formData[key] as Record<string, unknown>).id;
             delete formData[key];
         }
     });
     return formData;
 }
 
-export default function Form({ fields, relations, selectOptions, initialData = null }) {
-    const isEdit = !!initialData?.id;
-    const { data, setData, submit, processing, errors } = useForm(
+export default function Form({ fields, relations, selectOptions, initialData = null }: FormProps) {
+    const isEdit = !!(initialData as Record<string, unknown>)?.id;
+    const { data, setData, submit, processing, errors } = useForm<Record<string, unknown>>(
         () => prepareInitialData(initialData, relations)
     );
 
@@ -29,186 +57,184 @@ export default function Form({ fields, relations, selectOptions, initialData = n
     );
     const belongsToManyRelations = Object.entries(relations || {}).filter(([, rel]) => rel.type === 'belongsToMany');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isEdit) {
-            submit('put', update(initialData.id).url, { data });
+            submit('put', update((initialData as Record<string, unknown>).id as number).url, { data });
         } else {
             submit('post', store().url, { data });
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
         setData(name, type === 'checkbox' ? checked : value);
     };
 
-    const handleMultiSelect = (key, selectedIds) => {
+    const handleMultiSelect = (key: string, selectedIds: number[]) => {
         setData(key, selectedIds);
     };
 
-    const isBelongsToField = (fieldName) => {
+    const isBelongsToField = (fieldName: string): boolean => {
         return Object.values(relations || {}).some(
             (rel) => rel.type === 'belongsTo' && rel.foreign_key === fieldName
         );
     };
 
-    const getBelongsToKey = (fieldName) => {
+    const getBelongsToKey = (fieldName: string): string => {
         const entry = Object.entries(relations || {}).find(
             ([, rel]) => rel.type === 'belongsTo' && rel.foreign_key === fieldName
         );
         return entry ? entry[0] : fieldName;
     };
 
+    const getInputType = (fieldType: string): string => {
+        if (fieldType === 'integer' || fieldType === 'decimal') return 'number';
+        if (fieldType === 'date') return 'date';
+        if (fieldType === 'datetime') return 'datetime-local';
+        return 'text';
+    };
+
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            {fields.map(field => {
-                const label = field.label || field.name;
-                const error = errors[field.name];
-                const baseInput = "w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:focus:border-blue-400 dark:focus:ring-blue-400 text-sm";
-                const errorInput = "border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500 dark:focus:border-red-400 dark:focus:ring-red-400";
+        <form onSubmit={handleSubmit}>
+            <FieldGroup className="gap-6">
+                {fields.map(field => {
+                    const label = field.label || field.name;
+                    const error = errors[field.name];
 
-                if (isBelongsToField(field.name)) {
-                    const relKey = getBelongsToKey(field.name);
-                    return (
-                        <div key={field.name}>
-                            <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                {label}
-                            </label>
-                            <select
-                                id={field.name}
-                                name={field.name}
-                                value={data[field.name] ?? ''}
-                                onChange={handleChange}
-                                className={`${baseInput} ${error ? errorInput : ''}`}
-                            >
-                                <option value="">Select {label}...</option>
-                                {selectOptions[relKey] && Object.entries(selectOptions[relKey]).map(([id, lbl]) => (
-                                    <option key={id} value={id}>{lbl}</option>
-                                ))}
-                            </select>
-                            {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
-                        </div>
-                    );
-                }
-
-                if (field.type === 'text' || field.type === 'json') {
-                    return (
-                        <div key={field.name}>
-                            <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                {label}
-                            </label>
-                            <textarea
-                                id={field.name}
-                                name={field.name}
-                                value={data[field.name] ?? ''}
-                                onChange={handleChange}
-                                rows={4}
-                                className={`${baseInput} ${error ? errorInput : ''}`}
-                            />
-                            {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
-                        </div>
-                    );
-                }
-
-                if (field.type === 'boolean') {
-                    return (
-                        <div key={field.name} className="flex items-center gap-3">
-                            <input
-                                type="checkbox"
-                                id={field.name}
-                                name={field.name}
-                                checked={!!data[field.name]}
-                                onChange={handleChange}
-                                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400"
-                            />
-                            <label htmlFor={field.name} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {label}
-                            </label>
-                            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-                        </div>
-                    );
-                }
-
-                return (
-                    <div key={field.name}>
-                        <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            {label}
-                        </label>
-                        <input
-                            type={field.type === 'integer' || field.type === 'decimal' ? 'number' : field.type === 'date' ? 'date' : field.type === 'datetime' ? 'datetime-local' : 'text'}
-                            id={field.name}
-                            name={field.name}
-                            value={data[field.name] ?? ''}
-                            onChange={handleChange}
-                            step={field.type === 'decimal' ? '0.01' : undefined}
-                            className={`${baseInput} ${error ? errorInput : ''}`}
-                        />
-                        {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
-                    </div>
-                );
-            })}
-
-            {belongsToRelations.map(([key, rel]) => (
-                <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
-                        {key}
-                    </label>
-                    <select
-                        name={rel.foreign_key}
-                        value={data[rel.foreign_key] ?? ''}
-                        onChange={handleChange}
-                        className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:focus:border-blue-400 dark:focus:ring-blue-400 text-sm"
-                    >
-                        <option value="">Select {key}...</option>
-                        {selectOptions[key] && Object.entries(selectOptions[key]).map(([id, label]) => (
-                            <option key={id} value={id}>{label}</option>
-                        ))}
-                    </select>
-                    {errors[rel.foreign_key] && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors[rel.foreign_key]}</p>}
-                </div>
-            ))}
-
-            {belongsToManyRelations.map(([key, rel]) => (
-                <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 capitalize">{key}</label>
-                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-700/50">
-                        {selectOptions[key] && Object.entries(selectOptions[key]).map(([id, label]) => (
-                            <label key={id} className="flex items-center gap-2 py-1.5 px-2 hover:bg-white dark:hover:bg-gray-700 rounded cursor-pointer transition-colors">
-                                <input
-                                    type="checkbox"
-                                    checked={(data[key] || []).includes(Number(id))}
-                                    onChange={(e) => {
-                                        const current = data[key] || [];
-                                        handleMultiSelect(
-                                            key,
-                                            e.target.checked
-                                                ? [...current, Number(id)]
-                                                : current.filter(v => v !== Number(id))
-                                        );
-                                    }}
-                                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400"
-                                />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-                            </label>
-                        ))}
-                    </div>
-                    {errors[key] && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors[key]}</p>}
-                </div>
-            ))}
-
-            <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                    type="submit"
-                    disabled={processing}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                >
-                    {processing
-                        ? (isEdit ? 'Updating...' : 'Creating...')
-                        : (isEdit ? 'Update' : 'Create')
+                    if (isBelongsToField(field.name)) {
+                        const relKey = getBelongsToKey(field.name);
+                        return (
+                            <Field key={field.name} data-invalid={!!error}>
+                                <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                                <Select
+                                    value={data[field.name] ? String(data[field.name]) : null}
+                                    onValueChange={(value) => setData(field.name, Number(value))}
+                                >
+                                    <SelectTrigger id={field.name} aria-invalid={!!error}>
+                                        <SelectValue placeholder={`Select ${label}`} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            {selectOptions[relKey] && Object.entries(selectOptions[relKey]).map(([id, lbl]) => (
+                                                <SelectItem key={id} value={String(id)}>{lbl}</SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                {error && <FieldDescription>{error}</FieldDescription>}
+                            </Field>
+                        );
                     }
-                </button>
-            </div>
+
+                    if (field.type === 'text' || field.type === 'json') {
+                        return (
+                            <Field key={field.name} data-invalid={!!error}>
+                                <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                                <Textarea
+                                    id={field.name}
+                                    name={field.name}
+                                    value={(data[field.name] as string) ?? ''}
+                                    onChange={handleChange}
+                                    aria-invalid={!!error}
+                                    rows={4}
+                                />
+                                {error && <FieldDescription>{error}</FieldDescription>}
+                            </Field>
+                        );
+                    }
+
+                    if (field.type === 'boolean') {
+                        return (
+                            <Field key={field.name} data-invalid={!!error} orientation="horizontal">
+                                <Checkbox
+                                    id={field.name}
+                                    name={field.name}
+                                    checked={!!data[field.name]}
+                                    onCheckedChange={(checked) => setData(field.name, checked)}
+                                />
+                                <FieldLabel htmlFor={field.name} className="font-normal">{label}</FieldLabel>
+                                {error && <FieldDescription>{error}</FieldDescription>}
+                            </Field>
+                        );
+                    }
+
+                    return (
+                        <Field key={field.name} data-invalid={!!error}>
+                            <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                            <Input
+                                id={field.name}
+                                name={field.name}
+                                type={getInputType(field.type)}
+                                value={(data[field.name] as string | number) ?? ''}
+                                onChange={handleChange}
+                                aria-invalid={!!error}
+                                step={field.type === 'decimal' ? '0.01' : undefined}
+                            />
+                            {error && <FieldDescription>{error}</FieldDescription>}
+                        </Field>
+                    );
+                })}
+
+                {belongsToRelations.map(([key, rel]) => (
+                    <Field key={key} data-invalid={!!errors[rel.foreign_key]}>
+                        <FieldLabel htmlFor={rel.foreign_key} className="capitalize">{key}</FieldLabel>
+                        <Select
+                            value={data[rel.foreign_key] ? String(data[rel.foreign_key]) : null}
+                            onValueChange={(value) => setData(rel.foreign_key, Number(value))}
+                        >
+                            <SelectTrigger id={rel.foreign_key} aria-invalid={!!errors[rel.foreign_key]}>
+                                <SelectValue placeholder={`Select ${key}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    {selectOptions[key] && Object.entries(selectOptions[key]).map(([id, label]) => (
+                                        <SelectItem key={id} value={String(id)}>{label}</SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        {errors[rel.foreign_key] && <FieldDescription>{errors[rel.foreign_key]}</FieldDescription>}
+                    </Field>
+                ))}
+
+                {belongsToManyRelations.map(([key, rel]) => (
+                    <Field key={key} data-invalid={!!errors[key]}>
+                        <FieldLabel className="capitalize">{key}</FieldLabel>
+                        <div className="rounded-md border p-3 max-h-48 overflow-y-auto">
+                            {selectOptions[key] && Object.entries(selectOptions[key]).map(([id, label]) => (
+                                <label key={id} className="flex items-center gap-2 py-1.5 px-2 hover:bg-muted rounded cursor-pointer">
+                                    <Checkbox
+                                        checked={((data[key] as number[]) || []).includes(Number(id))}
+                                        onCheckedChange={(checked) => {
+                                            const current = (data[key] as number[]) || [];
+                                            handleMultiSelect(
+                                                key,
+                                                checked
+                                                    ? [...current, Number(id)]
+                                                    : current.filter(v => v !== Number(id))
+                                            );
+                                        }}
+                                    />
+                                    <span className="text-sm">{label}</span>
+                                </label>
+                            ))}
+                        </div>
+                        {errors[key] && <FieldDescription>{errors[key]}</FieldDescription>}
+                    </Field>
+                ))}
+
+                <div className="flex items-center gap-3 pt-4 border-t">
+                    <Button type="submit" disabled={processing}>
+                        {processing && <Spinner data-icon="inline-start" />}
+                        {processing
+                            ? (isEdit ? 'Updating...' : 'Creating...')
+                            : (isEdit ? 'Update' : 'Create')
+                        }
+                    </Button>
+                </div>
+            </FieldGroup>
         </form>
     );
 }

@@ -23,10 +23,10 @@ class ValidationRulesBuilder
     /**
      * Build validation rules array from field definitions and relationships.
      *
-     * @param  array  $fields        Field definitions from askForFields()
+     * @param  array<int, array<string, mixed>>  $fields        Field definitions from askForFields()
      * @param  string $name          Resource/model name (used for unique table reference)
-     * @param  array  $relationships Relationship definitions from askForRelationships()
-     * @return array Associative array of field_name => rules_array
+     * @param  array<int, array<string, mixed>>  $relationships Relationship definitions from askForRelationships()
+     * @return array<string, array<int, string>> Associative array of field_name => rules_array
      */
     public function build(array $fields, string $name, array $relationships = []): array
     {

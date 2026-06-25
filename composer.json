@@ -26,7 +26,9 @@
     },
     "require-dev": {
         "orchestra/testbench": "^v11.1.0",
-        "phpunit/phpunit": "^11.0 || ^12.0 || ^13.0"
+        "phpunit/phpunit": "^11.0 || ^12.0 || ^13.0",
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.0"
     },
     "extra": {
         "laravel": {

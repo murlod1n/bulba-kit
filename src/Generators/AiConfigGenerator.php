@@ -20,7 +20,7 @@ class AiConfigGenerator
      * Generate AI configuration file for a model.
      *
      * @param  string $name     Model name
-     * @param  array  $aiFields AI field configurations from askForAiGeneration()
+     * @param  array<int, array<string, mixed>>  $aiFields AI field configurations from askForAiGeneration()
      * @return void
      */
     public function generate($name, $aiFields): void
@@ -47,7 +47,7 @@ class AiConfigGenerator
     /**
      * Build the prompts array PHP code.
      *
-     * @param  array $aiFields AI field configurations
+     * @param  array<int, array<string, mixed>> $aiFields AI field configurations
      * @return string PHP array code
      */
     protected function buildPromptsArray(array $aiFields): string

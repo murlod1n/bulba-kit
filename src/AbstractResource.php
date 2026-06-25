@@ -26,7 +26,7 @@ abstract class AbstractResource
      *
      * Each field is an array with keys: name, type, label, and optional nullable/unique.
      *
-     * @return array Array of field descriptor arrays
+     * @return array<int, array<string, mixed>> Array of field descriptor arrays
      */
     public static abstract function fields(): array;
 
@@ -36,7 +36,7 @@ abstract class AbstractResource
      * Returns an associative array of field_name => rules for use with
      * Laravel's Validator or $request->validate().
      *
-     * @return array Associative array of validation rules
+     * @return array<string, array<int, string>> Associative array of validation rules
      */
     public static abstract function validationRules(): array;
 
@@ -46,7 +46,7 @@ abstract class AbstractResource
      * Each relation is an array with keys: type, model, display_field,
      * and optionally foreign_key or pivot_table.
      *
-     * @return array Associative array of relation_name => metadata
+     * @return array<string, array<string, mixed>> Associative array of relation_name => metadata
      */
     public static abstract function relations(): array;
 }

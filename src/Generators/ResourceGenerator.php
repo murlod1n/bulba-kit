@@ -39,8 +39,8 @@ class ResourceGenerator
      * - Relations metadata (for select dropdowns and relation display)
      *
      * @param  string $name          Resource/model name (e.g., 'Post')
-     * @param  array  $fields        Field definitions from askForFields()
-     * @param  array  $relationships Relationship definitions from askForRelationships()
+     * @param  array<int, array<string, mixed>>  $fields        Field definitions from askForFields()
+     * @param  array<int, array<string, mixed>>  $relationships Relationship definitions from askForRelationships()
      * @return void
      */
     public function generate($name, $fields, $relationships): void

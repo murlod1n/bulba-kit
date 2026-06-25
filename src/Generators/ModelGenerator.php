@@ -24,9 +24,9 @@ class ModelGenerator
      * Generate a new Model class file.
      *
      * @param  string $name            Model name (e.g., 'Post')
-     * @param  array  $fields          Field definitions from askForFields()
+     * @param  array<int, array<string, mixed>>  $fields          Field definitions from askForFields()
      * @param  bool   $withSoftDeletes Whether to include SoftDeletes trait
-     * @param  array  $relationships   Relationship definitions from askForRelationships()
+     * @param  array<int, array<string, mixed>>  $relationships   Relationship definitions from askForRelationships()
      * @return void
      */
     public function generate($name, $fields, $withSoftDeletes, $relationships = []): void
@@ -116,8 +116,8 @@ class ModelGenerator
      *
      * Includes user-defined fields and auto-generated FK fields from belongsTo relationships.
      *
-     * @param  array $fields        Field definitions
-     * @param  array $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>> $fields        Field definitions
+     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
      * @return string Comma-separated quoted field names
      */
     protected function buildFillableString(array $fields, array $relationships = []): string
@@ -159,7 +159,7 @@ class ModelGenerator
     /**
      * Build model import statements for relationships.
      *
-     * @param  array $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
      * @return string Import statements
      */
     protected function buildRelationImports(array $relationships): string
@@ -179,7 +179,7 @@ class ModelGenerator
     /**
      * Build all relationship method code blocks.
      *
-     * @param  array $relationships Relationship definitions
+     * @param  array<int, array<string, mixed>> $relationships Relationship definitions
      * @return string Method code blocks
      */
     protected function buildRelationMethods(array $relationships): string

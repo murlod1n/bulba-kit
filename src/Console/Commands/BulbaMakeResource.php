@@ -135,7 +135,7 @@ class BulbaMakeResource extends Command
     /**
      * Collect field definitions with error handling.
      *
-     * @return array Field definitions
+     * @return array<int, array<string, mixed>> Field definitions
      */
     protected function collectFields(): array
     {
@@ -150,7 +150,7 @@ class BulbaMakeResource extends Command
     /**
      * Collect generation options (timestamps, soft deletes, controller config).
      *
-     * @return array Options with keys: 'timestamps', 'softDeletes', 'controllerType', 'controllerMethods'
+     * @return array<string, mixed> Options with keys: 'timestamps', 'softDeletes', 'controllerType', 'controllerMethods'
      */
     protected function collectOptions(): array
     {

@@ -22,8 +22,8 @@ trait AsksForAiGeneration
      * - Prompt template
      * - Context fields to use for generation
      *
-     * @param  array $fields Field definitions
-     * @return array AI field configurations with 'field', 'prompt', and 'context_fields' keys
+     * @param  array<int, array<string, mixed>> $fields Field definitions
+     * @return array<int, array<string, mixed>> AI field configurations with 'field', 'prompt', and 'context_fields' keys
      */
     protected function askForAiGeneration(array $fields): array
     {
@@ -49,7 +49,7 @@ trait AsksForAiGeneration
     /**
      * Check if a field type supports AI generation.
      *
-     * @param  array $field Field definition
+     * @param  array<string, mixed> $field Field definition
      * @return bool
      */
     protected function isAiCompatibleField(array $field): bool
@@ -60,9 +60,9 @@ trait AsksForAiGeneration
     /**
      * Collect AI generation configuration for a single field.
      *
-     * @param  array $field  Field definition
-     * @param  array $fields All field definitions (for context selection)
-     * @return array AI field configuration
+     * @param  array<string, mixed> $field  Field definition
+     * @param  array<int, array<string, mixed>> $fields All field definitions (for context selection)
+     * @return array<string, mixed> AI field configuration
      */
     protected function collectAiFieldConfig(array $field, array $fields): array
     {

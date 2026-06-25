@@ -24,7 +24,7 @@ trait AsksForFields
      * - Type-specific modifiers (length for string, precision/scale for decimal)
      * - General modifiers (nullable, unique)
      *
-     * @return array Array of field definitions, each with 'name', 'type', and 'modifiers' keys
+     * @return array<int, array<string, mixed>> Array of field definitions, each with 'name', 'type', and 'modifiers' keys
      */
     protected function askForFields(): array
     {
@@ -95,7 +95,7 @@ trait AsksForFields
      *
      * @param  string $name Field name
      * @param  string $type Field type
-     * @return array  Modifiers array with keys like 'length', 'precision', 'scale', 'nullable', 'unique'
+     * @return array<string, mixed>  Modifiers array with keys like 'length', 'precision', 'scale', 'nullable', 'unique'
      */
     protected function askForFieldModifiers(string $name, string $type): array
     {

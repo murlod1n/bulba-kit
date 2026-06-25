@@ -34,7 +34,7 @@ class SchemaInspector
      * Filters out system tables (migrations, cache, sessions, etc.)
      * and returns table names sorted alphabetically.
      *
-     * @return array List of table names
+     * @return array<int, string> List of table names
      */
     public function getExistingTables(): array
     {
@@ -54,7 +54,7 @@ class SchemaInspector
      * Get column names for a given table.
      *
      * @param  string $table Table name
-     * @return array  List of column names
+     * @return array<int, string>  List of column names
      */
     public function getTableColumns(string $table): array
     {
@@ -94,7 +94,7 @@ class SchemaInspector
      * Find existing FK columns in a table (columns ending with '_id').
      *
      * @param  string $table Table name
-     * @return array  List of FK column names
+     * @return array<int, string>  List of FK column names
      */
     public function getForeignKeyColumns(string $table): array
     {

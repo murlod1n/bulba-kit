@@ -27,7 +27,7 @@ class ControllerGenerator
      *
      * @param  string $name            Model name (e.g., 'Post')
      * @param  string $type            Controller type ('inertia' or 'api')
-     * @param  array  $methods         Methods to generate (default: all CRUD methods)
+     * @param  array<int, string>  $methods         Methods to generate (default: all CRUD methods)
      * @return void
      */
     public function generate(
@@ -85,9 +85,9 @@ class ControllerGenerator
      * Maps each method name to its content, using empty string for methods
      * not in the selected methods list.
      *
-     * @param  array $methods        Selected methods
-     * @param  array $methodContents Generated method contents
-     * @return array Placeholders indexed by method name
+     * @param  array<int, string> $methods        Selected methods
+     * @param  array<int, string> $methodContents Generated method contents
+     * @return array<int, string> Placeholders indexed by method name
      */
     protected function getMethodPlaceholders(array $methods, array $methodContents): array
     {

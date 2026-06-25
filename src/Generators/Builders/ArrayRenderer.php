@@ -27,7 +27,7 @@ class ArrayRenderer
      * indentation, and trailing comma. Suitable for multi-line array content
      * inside return [...] blocks.
      *
-     * @param  array $array      The array to render
+     * @param  array<int|string, mixed> $array      The array to render
      * @param  int   $indentLevel Number of indentation levels (each level = 4 spaces)
      * @return string PHP code string, or empty string if array is empty
      */

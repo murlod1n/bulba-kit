@@ -25,10 +25,10 @@ trait AsksForRelationships
     /**
      * Interactively collect relationship definitions from the user.
      *
-     * @param  array  $fields        Current field definitions (passed by reference for FK additions)
+     * @param  array<int, array<string, mixed>> &$fields        Current field definitions (passed by reference for FK additions)
      * @param  string $currentModel  Name of the model being created
      * @param  SchemaInspector $schema Schema inspector instance
-     * @return array  Relationship definitions with inverse metadata
+     * @return array<int, array<string, mixed>>  Relationship definitions with inverse metadata
      */
     protected function askForRelationships(array &$fields, string $currentModel, SchemaInspector $schema): array
     {
@@ -79,12 +79,12 @@ trait AsksForRelationships
     /**
      * Build relationship data for a standard (non-pivot) relationship.
      *
-     * @param  array  $existingTables Available tables
+     * @param  array<int, string>  $existingTables Available tables
      * @param  string $currentTable   Current table name
      * @param  string $currentModel   Current model name
      * @param  string $fkLocation     'current' or 'target'
      * @param  SchemaInspector $schema Schema inspector instance
-     * @return array  Relationship definition with inverse metadata
+     * @return array<string, mixed>  Relationship definition with inverse metadata
      */
     protected function askForStandardRelationship(
         array $existingTables,
@@ -146,11 +146,11 @@ trait AsksForRelationships
     /**
      * Build relationship data for a pivot (many-to-many) relationship.
      *
-     * @param  array  $existingTables Available tables
+     * @param  array<int, string>  $existingTables Available tables
      * @param  string $currentTable   Current table name
      * @param  string $currentModel   Current model name
      * @param  SchemaInspector $schema Schema inspector instance
-     * @return array  Relationship definition with inverse metadata
+     * @return array<string, mixed>  Relationship definition with inverse metadata
      */
     protected function askForPivotRelationship(
         array $existingTables,
@@ -200,7 +200,7 @@ trait AsksForRelationships
     /**
      * Ask user to select a table from existing tables or enter manually.
      *
-     * @param  array  $existingTables Available tables
+     * @param  array<int, string>  $existingTables Available tables
      * @param  string $label          Prompt label
      * @return string Table name
      */
@@ -222,7 +222,7 @@ trait AsksForRelationships
     /**
      * Ask user to select a column from a list of columns.
      *
-     * @param  array  $columns  Available column names
+     * @param  array<int, string>  $columns  Available column names
      * @param  string $label    Prompt label
      * @param  string $default  Default column name
      * @return string Selected column name
@@ -243,7 +243,7 @@ trait AsksForRelationships
     /**
      * Ask user to select or create a pivot table for many-to-many relationships.
      *
-     * @param  array  $existingTables Available tables
+     * @param  array<int, string>  $existingTables Available tables
      * @param  string $targetTable    Target table name
      * @param  string $currentModel   Current model name
      * @return string Pivot table name
