@@ -1,0 +1,8 @@
+public function store(Request $request)
+    {
+        $validated = $request->validate($this->resource->validationRules());
+        $item = {{ model }}::create($validated);
+        $this->syncBelongsToMany($item, $request);
+        $this->runAiGeneration($item);
+        return redirect()->route('{{ modelLowerPlural }}.index');
+    }

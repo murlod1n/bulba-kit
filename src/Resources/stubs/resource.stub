@@ -1,0 +1,35 @@
+<?php
+
+namespace {{ namespace }};
+
+use Nktlksvch\Grain\AbstractResource;
+use App\Models\{{ model }};
+
+class {{ class }} extends AbstractResource
+{
+    public static function model(): string
+    {
+        return {{ model }}::class;
+    }
+
+    public static function fields(): array
+    {
+        return [
+            {{ fields }}
+        ];
+    }
+
+    public static function validationRules(): array
+    {
+        return [
+            {{ validationRules }}
+        ];
+    }
+
+    public static function relations(): array
+    {
+        return [
+            {{ relations }}
+        ];
+    }
+}

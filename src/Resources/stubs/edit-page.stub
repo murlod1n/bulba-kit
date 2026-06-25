@@ -1,0 +1,25 @@
+import React from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import { index, show } from '@/actions/App/Http/Controllers/Admin/{{ model }}Controller';
+import Form from './Form';
+
+export default function Edit() {
+    const { item, fields, relations, selectOptions } = usePage().props;
+    return (
+        <div className="p-6 max-w-2xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+                <Link
+                    href={show(item.id)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                >
+                    &larr;
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit {{ model }}</h1>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                <Form fields={fields} relations={relations} selectOptions={selectOptions} initialData={item} />
+            </div>
+        </div>
+    );
+}

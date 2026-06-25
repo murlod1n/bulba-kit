@@ -1,0 +1,2 @@
+
+Route::resource('{{ prefix }}/{{ resource }}', {{ model }}Controller::class)->middleware(['{{ middleware }}']);

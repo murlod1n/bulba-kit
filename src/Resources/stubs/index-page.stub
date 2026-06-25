@@ -1,0 +1,105 @@
+import React from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { index, create, show, edit, destroy } from '@/actions/App/Http/Controllers/Admin/{{ model }}Controller';
+
+export default function Index() {
+    const { items, fields, relations } = usePage().props;
+
+    const getRelatedLabel = (item, fieldName, relations) => {
+        if (!fieldName.endsWith('_id')) return item[fieldName];
+        const relKey = fieldName.replace('_id', '');
+        const rel = relations?.[relKey];
+        if (rel && item[relKey]) return item[relKey][rel.display_field] ?? item[fieldName];
+        return item[fieldName];
+    };
+
+    const handleDelete = (id) => {
+        if (confirm('Are you sure you want to delete this record?')) {
+            router.delete(destroy(id));
+        }
+    };
+
+    return (
+        <div className="p-6 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ model }} List</h1>
+                <Link
+                    href={create()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                    + Create
+                </Link>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                <table className="w-full">
+                    <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                            {fields.map((field, index) => (
+                                <th key={index} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    {field.label || field.name}
+                                </th>
+                            ))}
+                            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {items.data.map(item => (
+                            <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{item.id}</td>
+                                {fields.map(field => (
+                                    <td key={field.name} className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                        {field.type === 'boolean'
+                                            ? (item[field.name] ? 'Yes' : 'No')
+                                            : (getRelatedLabel(item, field.name, relations) ?? '—')
+                                        }
+                                    </td>
+                                ))}
+                                <td className="px-4 py-3 text-sm text-right space-x-2">
+                                    <Link
+                                        href={show(item.id)}
+                                        className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium"
+                                    >
+                                        View
+                                    </Link>
+                                    <Link
+                                        href={edit(item.id)}
+                                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                                    >
+                                        Edit
+                                    </Link>
+                                    <button
+                                        onClick={() => handleDelete(item.id)}
+                                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium"
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {items.links && items.links.length > 3 && (
+                <div className="flex justify-center gap-1 mt-6">
+                    {items.links.map((link, i) => (
+                        <Link
+                            key={i}
+                            href={link.url || '#'}
+                            className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                                link.active
+                                    ? 'bg-blue-600 text-white'
+                                    : link.url
+                                        ? 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                            }`}
+                            dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}

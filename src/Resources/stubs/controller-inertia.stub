@@ -1,0 +1,70 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Http\Controllers\Controller;
+use App\Models\{{ model }};
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use {{ resourceNamespace }}\{{ resourceClass }};
+
+class {{ model }}Controller extends Controller
+{
+    protected $resource;
+
+    public function __construct()
+    {
+        $this->resource = new {{ resourceClass }}();
+    }
+
+    {{ index }}
+
+    {{ create }}
+
+    {{ store }}
+
+    {{ show }}
+
+    {{ edit }}
+
+    {{ update }}
+
+    {{ destroy }}
+
+    protected function getSelectOptions()
+    {
+        $options = [];
+        foreach ($this->resource->relations() as $key => $rel) {
+            if (($rel['type'] === 'belongsTo' || $rel['type'] === 'belongsToMany') && isset($rel['model'])) {
+                $model = $rel['model'];
+                $display = $rel['display_field'] ?? 'name';
+                $options[$key] = $model::pluck($display, 'id')->toArray();
+            }
+        }
+        return $options;
+    }
+
+    protected function getRelationNames(): array
+    {
+        return array_keys($this->resource->relations());
+    }
+
+    protected function syncBelongsToMany($item, Request $request): void
+    {
+        foreach ($this->resource->relations() as $key => $rel) {
+            if ($rel['type'] === 'belongsToMany' && $request->has($key)) {
+                $item->{$key}()->sync($request->input($key, []));
+            }
+        }
+    }
+
+    protected function runAiGeneration($item)
+    {
+        $aiConfig = config('admin.ai.'.class_basename($item));
+        if (! $aiConfig || ! $aiConfig['enabled']) {
+            return;
+        }
+        // Здесь будет вызов AI-сервиса для генерации значений
+        // Например: app(AiService::class)->generate($item, $aiConfig);
+    }
+}

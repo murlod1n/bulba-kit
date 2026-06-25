@@ -1,0 +1,8 @@
+public function create()
+    {
+        return Inertia::render('{{ pagesPath }}/{{ model }}/Create', [
+            'fields' => $this->resource->fields(),
+            'relations' => $this->resource->relations(),
+            'selectOptions' => $this->getSelectOptions(),
+        ]);
+    }

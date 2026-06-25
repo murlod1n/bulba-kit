@@ -1,0 +1,16 @@
+<?php
+
+namespace App\Models;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;{{ softDeleteImport }}
+
+{{ relationImports }}
+
+#[Fillable([{{ fillable }}])]
+class {{ name }} extends Model
+{
+    {{ softDeleteTrait }}
+    protected $fillable = [{{ fillable }}];
+
+{{ relations }}
+}

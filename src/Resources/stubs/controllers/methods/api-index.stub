@@ -1,0 +1,9 @@
+public function index()
+    {
+        $items = {{ model }}::paginate(10);
+        return response()->json([
+            'items' => $items,
+            'fields' => $this->resource->fields(),
+            'relations' => $this->resource->relations(),
+        ]);
+    }

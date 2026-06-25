@@ -1,0 +1,10 @@
+<?php
+
+return [
+    'enabled' => true,
+    'provider' => config('admin-generator.ai_provider', 'openai'),
+    'model' => 'gpt-4',
+    'prompts' => [
+{{ prompts }}
+    ],
+];

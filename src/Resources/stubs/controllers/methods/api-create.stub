@@ -1,0 +1,8 @@
+public function create()
+    {
+        return response()->json([
+            'fields' => $this->resource->fields(),
+            'relations' => $this->resource->relations(),
+            'selectOptions' => $this->getSelectOptions(),
+        ]);
+    }
