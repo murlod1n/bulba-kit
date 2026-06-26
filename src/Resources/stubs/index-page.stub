@@ -44,6 +44,7 @@ interface FieldDef {
     name: string;
     label?: string;
     type: string;
+    translatable?: boolean;
 }
 
 interface RelationDef {
@@ -65,11 +66,12 @@ interface PageProps {
     };
     fields: FieldDef[];
     relations: Record<string, Record<string, RelationDef>>;
+    locale: string;
     [key: string]: unknown;
 }
 
 export default function Index() {
-    const { items, fields, relations } = usePage<PageProps>().props;
+    const { items, fields, relations, locale } = usePage<PageProps>().props;
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
     const getRelatedLabel = (item: Record<string, unknown>, fieldName: string, relations: Record<string, Record<string, RelationDef>>): string => {
@@ -118,9 +120,30 @@ export default function Index() {
                                     <TableCell className="font-medium">{item.id as number}</TableCell>
                                     {fields.map((field) => (
                                         <TableCell key={field.name}>
-                                            {field.type === 'boolean'
-                                                ? (item[field.name] ? <Badge>Yes</Badge> : <Badge variant="secondary">No</Badge>)
-                                                : (getRelatedLabel(item, field.name, relations))
+                                            {field.type === 'image'
+                                                ? (item[`${field.name}_thumb`]
+                                                    ? <img src={item[`${field.name}_thumb`] as string} alt="" className="h-10 w-10 rounded object-cover" />
+                                                    : <span className="text-muted-foreground">—</span>
+                                                )
+                                                : field.type === 'gallery'
+                                                    ? ((item[field.name] as Array<{thumb: string}>)?.length
+                                                        ? <div className="flex -space-x-2">
+                                                            {(item[field.name] as Array<{thumb: string}>).slice(0, 3).map((img, i) => (
+                                                                <img key={i} src={img.thumb} alt="" className="h-8 w-8 rounded border-2 border-background object-cover" />
+                                                            ))}
+                                                            {(item[field.name] as Array<{thumb: string}>).length > 3 && (
+                                                                <span className="flex h-8 w-8 items-center justify-center rounded border-2 border-background bg-muted text-xs font-medium">
+                                                                    +{(item[field.name] as Array<{thumb: string}>).length - 3}
+                                                                </span>
+                                                            )}
+                                                          </div>
+                                                        : <span className="text-muted-foreground">—</span>
+                                                    )
+                                                    : field.type === 'boolean'
+                                                        ? (item[field.name] ? <Badge>Yes</Badge> : <Badge variant="secondary">No</Badge>)
+                                                        : field.translatable
+                                                            ? (String(((item[field.name] as Record<string, string>) || {})[locale] ?? '—'))
+                                                            : (getRelatedLabel(item, field.name, relations))
                                             }
                                         </TableCell>
                                     ))}

@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { GalleryUpload, GalleryItem } from '@/components/ui/gallery-upload';
 
 interface FieldDef {
     name: string;
     label?: string;
     type: string;
+    translatable?: boolean;
 }
 
 interface RelationDef {
@@ -27,6 +29,8 @@ interface FormProps {
     relations: Record<string, RelationDef>;
     selectOptions: Record<string, Record<string, string>>;
     initialData?: Record<string, unknown> | null;
+    locales?: string[];
+    activeLocale?: string;
 }
 
 function prepareInitialData(initialData: Record<string, unknown> | null | undefined, relations: Record<string, RelationDef>): Record<string, unknown> {
@@ -46,7 +50,7 @@ function prepareInitialData(initialData: Record<string, unknown> | null | undefi
     return formData;
 }
 
-export default function Form({ fields, relations, selectOptions, initialData = null }: FormProps) {
+export default function Form({ fields, relations, selectOptions, initialData = null, locales = ['en'], activeLocale = 'en' }: FormProps) {
     const isEdit = !!(initialData as Record<string, unknown>)?.id;
     const { data, setData, submit, processing, errors } = useForm<Record<string, unknown>>(
         () => prepareInitialData(initialData, relations)
@@ -64,6 +68,16 @@ export default function Form({ fields, relations, selectOptions, initialData = n
             submit('put', update((initialData as Record<string, unknown>).id as number).url, { data });
         } else {
             submit('post', store().url, { data });
+        }
+    };
+
+    const handleAutoTranslate = (e: React.FormEvent) => {
+        e.preventDefault();
+        setData('auto_translate', true);
+        if (isEdit) {
+            submit('put', update((initialData as Record<string, unknown>).id as number).url, { data: { ...data, auto_translate: true } });
+        } else {
+            submit('post', store().url, { data: { ...data, auto_translate: true } });
         }
     };
 
@@ -97,12 +111,25 @@ export default function Form({ fields, relations, selectOptions, initialData = n
         return 'text';
     };
 
+    const getTranslatableValue = (fieldName: string): string => {
+        const translations = (data[fieldName] as Record<string, string>) || {};
+        return translations[activeLocale] ?? '';
+    };
+
+    const setTranslatableValue = (fieldName: string, value: string) => {
+        const translations = { ...((data[fieldName] as Record<string, string>) || {}) };
+        translations[activeLocale] = value;
+        setData(fieldName, translations);
+    };
+
     return (
         <form onSubmit={handleSubmit}>
             <FieldGroup className="gap-6">
                 {fields.map(field => {
                     const label = field.label || field.name;
                     const error = errors[field.name];
+                    const localeError = errors[`${field.name}.${activeLocale}`];
+                    const hasError = !!(error || localeError);
 
                     if (isBelongsToField(field.name)) {
                         const relKey = getBelongsToKey(field.name);
@@ -124,6 +151,70 @@ export default function Form({ fields, relations, selectOptions, initialData = n
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                {error && <FieldDescription>{error}</FieldDescription>}
+                            </Field>
+                        );
+                    }
+
+                    // Translatable text field
+                    if (field.translatable && (field.type === 'text' || field.type === 'string' || field.type === 'json')) {
+                        return (
+                            <Field key={field.name} data-invalid={hasError}>
+                                <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+                                {field.type === 'text' || field.type === 'json' ? (
+                                    <Textarea
+                                        id={field.name}
+                                        name={field.name}
+                                        value={getTranslatableValue(field.name)}
+                                        onChange={(e) => setTranslatableValue(field.name, e.target.value)}
+                                        aria-invalid={hasError}
+                                        rows={4}
+                                    />
+                                ) : (
+                                    <Input
+                                        id={field.name}
+                                        name={field.name}
+                                        type="text"
+                                        value={getTranslatableValue(field.name)}
+                                        onChange={(e) => setTranslatableValue(field.name, e.target.value)}
+                                        aria-invalid={hasError}
+                                    />
+                                )}
+                                {(error || localeError) && <FieldDescription>{error || localeError}</FieldDescription>}
+                            </Field>
+                        );
+                    }
+
+                    if (field.type === 'image') {
+                        return (
+                            <Field key={field.name} data-invalid={!!error}>
+                                <ImageUpload
+                                    label={label}
+                                    value={data[`${field.name}_url`] as string}
+                                    thumb={data[`${field.name}_thumb`] as string}
+                                    alt={(data[`${field.name}_alt`] as string) ?? ''}
+                                    error={error}
+                                    onChange={(file) => setData(field.name, file)}
+                                    onRemove={() => setData(`remove_${field.name}`, true)}
+                                    onAltChange={(alt) => setData(`${field.name}_alt`, alt)}
+                                />
+                                {error && <FieldDescription>{error}</FieldDescription>}
+                            </Field>
+                        );
+                    }
+
+                    if (field.type === 'gallery') {
+                        return (
+                            <Field key={field.name} data-invalid={!!error}>
+                                <GalleryUpload
+                                    label={label}
+                                    value={(data[field.name] as GalleryItem[]) ?? []}
+                                    error={error}
+                                    onChange={(files) => setData(field.name, files)}
+                                    onRemove={(id) => setData(`remove_${field.name}`, [...((data[`remove_${field.name}`] as number[]) || []), id])}
+                                    onReorder={(ids) => setData(`reorder_${field.name}`, ids)}
+                                    onAltChange={(id, alt) => setData(`alt_${field.name}`, { ...((data[`alt_${field.name}`] as Record<number, string>) || {}), [id]: alt })}
+                                />
                                 {error && <FieldDescription>{error}</FieldDescription>}
                             </Field>
                         );
@@ -234,6 +325,12 @@ export default function Form({ fields, relations, selectOptions, initialData = n
                             : (isEdit ? 'Update' : 'Create')
                         }
                     </Button>
+                    {locales.length > 1 && (
+                        <Button type="button" variant="outline" disabled={processing} onClick={handleAutoTranslate}>
+                            {processing && <Spinner data-icon="inline-start" />}
+                            {processing ? 'Translating...' : 'Save with auto-translation'}
+                        </Button>
+                    )}
                 </div>
             </FieldGroup>
         </form>

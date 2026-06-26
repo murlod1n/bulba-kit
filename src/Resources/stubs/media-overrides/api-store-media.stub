@@ -1,0 +1,14 @@
+
+    public function store(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $definition = $this->getCrudDefinition();
+        $validated = $request->validate($definition->validationRules());
+        $item = $definition->model()::create($validated);
+
+        $this->syncBelongsToMany($item, $request);
+        $this->handleMediaUpload($item, $request);
+        $this->handleGalleryUpload($item, $request);
+        $this->runAiGeneration($item);
+
+        return response()->json($item, 201);
+    }

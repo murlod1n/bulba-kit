@@ -1,8 +1,0 @@
-public function update(Request $request, $id)
-    {
-        $item = {{ model }}::findOrFail($id);
-        $validated = $request->validate($this->resource->validationRules());
-        $item->update($validated);
-        $this->syncBelongsToMany($item, $request);
-        return response()->json($item);
-    }

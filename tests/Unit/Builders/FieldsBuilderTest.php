@@ -2,8 +2,8 @@
 
 namespace Nktlksvch\BulbaKit\Tests\Unit\Builders;
 
-use PHPUnit\Framework\TestCase;
 use Nktlksvch\BulbaKit\Generators\Builders\FieldsBuilder;
+use PHPUnit\Framework\TestCase;
 
 class FieldsBuilderTest extends TestCase
 {
@@ -11,7 +11,7 @@ class FieldsBuilderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->builder = new FieldsBuilder();
+        $this->builder = new FieldsBuilder;
     }
 
     public function test_build_basic_fields(): void
@@ -65,7 +65,7 @@ class FieldsBuilderTest extends TestCase
         $this->assertArrayNotHasKey('unique', $result[0]);
     }
 
-    public function test_build_adds_fk_field_for_belongsTo_relationship(): void
+    public function test_build_adds_fk_field_for_belongs_to_relationship(): void
     {
         $fields = [
             ['name' => 'title', 'type' => 'string', 'modifiers' => []],
@@ -130,7 +130,7 @@ class FieldsBuilderTest extends TestCase
         $this->assertTrue($result[0]['nullable']);
     }
 
-    public function test_build_ignores_non_belongsTo_relationships_for_fk_fields(): void
+    public function test_build_ignores_non_belongs_to_relationships_for_fk_fields(): void
     {
         $fields = [];
 
@@ -162,7 +162,7 @@ class FieldsBuilderTest extends TestCase
         $this->assertSame('Created At', $result[1]['label']);
     }
 
-    public function test_image_field_generates_virtual_fields(): void
+    public function test_image_field_keeps_original_field(): void
     {
         $fields = [
             ['name' => 'title', 'type' => 'string', 'modifiers' => ['length' => 255]],
@@ -171,17 +171,15 @@ class FieldsBuilderTest extends TestCase
 
         $result = $this->builder->build($fields, []);
 
-        // Should have: title + image_url + image_thumb + image_alt = 4 fields
-        $this->assertCount(4, $result);
+        // Should have: title + image = 2 fields
+        $this->assertCount(2, $result);
 
         $names = array_column($result, 'name');
         $this->assertContains('title', $names);
-        $this->assertContains('image_url', $names);
-        $this->assertContains('image_thumb', $names);
-        $this->assertContains('image_alt', $names);
+        $this->assertContains('image', $names);
     }
 
-    public function test_image_field_url_is_read_only(): void
+    public function test_image_field_has_correct_type(): void
     {
         $fields = [
             ['name' => 'photo', 'type' => 'image', 'modifiers' => ['collection' => 'photo', 'thumb_width' => 100, 'thumb_height' => 100, 'single' => true]],
@@ -189,37 +187,9 @@ class FieldsBuilderTest extends TestCase
 
         $result = $this->builder->build($fields, []);
 
-        $urlField = collect($result)->firstWhere('name', 'photo_url');
-        $this->assertNotNull($urlField);
-        $this->assertTrue($urlField['readOnly']);
-
-        $thumbField = collect($result)->firstWhere('name', 'photo_thumb');
-        $this->assertNotNull($thumbField);
-        $this->assertTrue($thumbField['readOnly']);
-    }
-
-    public function test_image_field_alt_is_nullable(): void
-    {
-        $fields = [
-            ['name' => 'photo', 'type' => 'image', 'modifiers' => ['collection' => 'photo', 'thumb_width' => 100, 'thumb_height' => 100, 'single' => true]],
-        ];
-
-        $result = $this->builder->build($fields, []);
-
-        $altField = collect($result)->firstWhere('name', 'photo_alt');
-        $this->assertNotNull($altField);
-        $this->assertTrue($altField['nullable']);
-    }
-
-    public function test_image_field_not_present_as_original_field(): void
-    {
-        $fields = [
-            ['name' => 'photo', 'type' => 'image', 'modifiers' => ['collection' => 'photo', 'thumb_width' => 100, 'thumb_height' => 100, 'single' => true]],
-        ];
-
-        $result = $this->builder->build($fields, []);
-
-        $names = array_column($result, 'name');
-        $this->assertNotContains('photo', $names);
+        $imageField = collect($result)->firstWhere('name', 'photo');
+        $this->assertNotNull($imageField);
+        $this->assertSame('image', $imageField['type']);
+        $this->assertSame('photo', $imageField['collection']);
     }
 }

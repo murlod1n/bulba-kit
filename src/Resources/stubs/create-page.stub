@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { index } from '@/actions/App/Http/Controllers/Admin/{{ model }}Controller';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeftIcon } from 'lucide-react';
+import { LocaleSwitcher } from '@/components/ui/locale-switcher';
 import Form from './Form';
 
 interface FieldDef {
     name: string;
     label?: string;
     type: string;
+    translatable?: boolean;
 }
 
 interface RelationDef {
@@ -22,11 +24,16 @@ interface PageProps {
     fields: FieldDef[];
     relations: Record<string, RelationDef>;
     selectOptions: Record<string, Record<string, string>>;
+    locales: string[];
+    locale: string;
     [key: string]: unknown;
 }
 
 export default function Create() {
-    const { fields, relations, selectOptions } = usePage<PageProps>().props;
+    const { fields, relations, selectOptions, locales, locale } = usePage<PageProps>().props;
+    const [activeLocale, setActiveLocale] = useState(locale);
+
+    const hasTranslatable = fields.some(f => f.translatable);
 
     return (
         <>
@@ -40,9 +47,23 @@ export default function Create() {
                     <h1 className="text-xl font-semibold">Create {{ model }}</h1>
                 </div>
 
+                {hasTranslatable && (
+                    <LocaleSwitcher
+                        locales={locales}
+                        activeLocale={activeLocale}
+                        onLocaleChange={setActiveLocale}
+                    />
+                )}
+
                 <Card>
                     <CardContent>
-                        <Form fields={fields} relations={relations} selectOptions={selectOptions} />
+                        <Form
+                            fields={fields}
+                            relations={relations}
+                            selectOptions={selectOptions}
+                            locales={locales}
+                            activeLocale={activeLocale}
+                        />
                     </CardContent>
                 </Card>
             </div>

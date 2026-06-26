@@ -9,15 +9,16 @@ use Nktlksvch\BulbaKit\Tests\TestCase;
 class CrudOperationsTest extends TestCase
 {
     private MigrationGenerator $migrationGen;
+
     private string $migrationDir;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->migrationGen = new MigrationGenerator();
-        $this->migrationDir = $this->tempDir . '/database/migrations';
+        $this->migrationGen = new MigrationGenerator;
+        $this->migrationDir = $this->tempDir.'/database/migrations';
         mkdir($this->migrationDir, 0755, true);
-        $this->app->useDatabasePath($this->tempDir . '/database');
+        $this->app->useDatabasePath($this->tempDir.'/database');
 
         $this->app['config']->set('database.default', 'testing');
         $this->app['config']->set('database.connections.testing', [
@@ -49,7 +50,7 @@ class CrudOperationsTest extends TestCase
 
         $this->migrationGen->generate('Product', $fields, [], true, false, []);
 
-        $files = glob($this->migrationDir . '/*_create_products_table.php');
+        $files = glob($this->migrationDir.'/*_create_products_table.php');
         $this->assertCount(1, $files);
 
         $this->runMigration($files[0]);
@@ -72,7 +73,7 @@ class CrudOperationsTest extends TestCase
 
         $this->migrationGen->generate('Setting', $fields, [], false, false, []);
 
-        $files = glob($this->migrationDir . '/*_create_settings_table.php');
+        $files = glob($this->migrationDir.'/*_create_settings_table.php');
         $this->runMigration($files[0]);
 
         $this->assertTrue(Schema::hasTable('settings'));
@@ -87,7 +88,7 @@ class CrudOperationsTest extends TestCase
 
         $this->migrationGen->generate('Post', $fields, [], true, true, []);
 
-        $files = glob($this->migrationDir . '/*_create_posts_table.php');
+        $files = glob($this->migrationDir.'/*_create_posts_table.php');
         $this->runMigration($files[0]);
 
         $this->assertTrue(Schema::hasColumn('posts', 'deleted_at'));
@@ -97,12 +98,12 @@ class CrudOperationsTest extends TestCase
     // Foreign key constraints
     // -------------------------------------------------------
 
-    public function test_migration_creates_belongsTo_foreign_key(): void
+    public function test_migration_creates_belongs_to_foreign_key(): void
     {
         // Create categories table first
         $catFields = [['name' => 'name', 'type' => 'string', 'modifiers' => []]];
         $this->migrationGen->generate('Category', $catFields, [], true, false, []);
-        $catFiles = glob($this->migrationDir . '/*_create_categories_table.php');
+        $catFiles = glob($this->migrationDir.'/*_create_categories_table.php');
         $this->runMigration($catFiles[0]);
 
         // Create posts table with FK
@@ -118,18 +119,18 @@ class CrudOperationsTest extends TestCase
         ];
 
         $this->migrationGen->generate('Post', $postFields, [], true, false, $relationships);
-        $postFiles = glob($this->migrationDir . '/*_create_posts_table.php');
+        $postFiles = glob($this->migrationDir.'/*_create_posts_table.php');
         $this->runMigration($postFiles[0]);
 
         $this->assertTrue(Schema::hasTable('posts'));
         $this->assertTrue(Schema::hasColumn('posts', 'category_id'));
     }
 
-    public function test_migration_creates_nullable_belongsTo_foreign_key(): void
+    public function test_migration_creates_nullable_belongs_to_foreign_key(): void
     {
         $catFields = [['name' => 'name', 'type' => 'string', 'modifiers' => []]];
         $this->migrationGen->generate('Category', $catFields, [], true, false, []);
-        $catFiles = glob($this->migrationDir . '/*_create_categories_table.php');
+        $catFiles = glob($this->migrationDir.'/*_create_categories_table.php');
         $this->runMigration($catFiles[0]);
 
         $postFields = [['name' => 'title', 'type' => 'string', 'modifiers' => []]];
@@ -145,7 +146,7 @@ class CrudOperationsTest extends TestCase
         ];
 
         $this->migrationGen->generate('Post', $postFields, [], true, false, $relationships);
-        $postFiles = glob($this->migrationDir . '/*_create_posts_table.php');
+        $postFiles = glob($this->migrationDir.'/*_create_posts_table.php');
         $this->runMigration($postFiles[0]);
 
         $this->assertTrue(Schema::hasColumn('posts', 'category_id'));
@@ -160,13 +161,13 @@ class CrudOperationsTest extends TestCase
         // Create posts table
         $postFields = [['name' => 'title', 'type' => 'string', 'modifiers' => []]];
         $this->migrationGen->generate('Post', $postFields, [], true, false, []);
-        $postFiles = glob($this->migrationDir . '/*_create_posts_table.php');
+        $postFiles = glob($this->migrationDir.'/*_create_posts_table.php');
         $this->runMigration($postFiles[0]);
 
         // Create tags table
         $tagFields = [['name' => 'name', 'type' => 'string', 'modifiers' => []]];
         $this->migrationGen->generate('Tag', $tagFields, [], true, false, []);
-        $tagFiles = glob($this->migrationDir . '/*_create_tags_table.php');
+        $tagFiles = glob($this->migrationDir.'/*_create_tags_table.php');
         $this->runMigration($tagFiles[0]);
 
         // Generate pivot migration
@@ -183,7 +184,7 @@ class CrudOperationsTest extends TestCase
 
         $this->migrationGen->generate('Post', $postFields, [], true, false, $relationships);
 
-        $pivotFiles = glob($this->migrationDir . '/*_create_post_tag_table.php');
+        $pivotFiles = glob($this->migrationDir.'/*_create_post_tag_table.php');
         $this->assertCount(1, $pivotFiles);
         $this->runMigration($pivotFiles[0]);
 
@@ -212,7 +213,7 @@ class CrudOperationsTest extends TestCase
 
         $this->migrationGen->generate('AllTypes', $fields, [], true, false, []);
 
-        $files = glob($this->migrationDir . '/*_create_all_types_table.php');
+        $files = glob($this->migrationDir.'/*_create_all_types_table.php');
         $this->runMigration($files[0]);
 
         $this->assertTrue(Schema::hasTable('all_types'));
@@ -240,7 +241,7 @@ class CrudOperationsTest extends TestCase
 
         $this->migrationGen->generate('Article', $fields, [], true, false, []);
 
-        $files = glob($this->migrationDir . '/*_create_articles_table.php');
+        $files = glob($this->migrationDir.'/*_create_articles_table.php');
         $this->runMigration($files[0]);
 
         $this->assertTrue(Schema::hasColumn('articles', 'subtitle'));
@@ -254,7 +255,7 @@ class CrudOperationsTest extends TestCase
 
         $this->migrationGen->generate('Page', $fields, [], true, false, []);
 
-        $files = glob($this->migrationDir . '/*_create_pages_table.php');
+        $files = glob($this->migrationDir.'/*_create_pages_table.php');
         $this->runMigration($files[0]);
 
         $this->assertTrue(Schema::hasColumn('pages', 'slug'));
@@ -272,7 +273,7 @@ class CrudOperationsTest extends TestCase
             ['name' => 'email', 'type' => 'string', 'modifiers' => ['length' => 255, 'unique' => true]],
         ];
         $this->migrationGen->generate('User', $userFields, [], true, false, []);
-        $userFiles = glob($this->migrationDir . '/*_create_users_table.php');
+        $userFiles = glob($this->migrationDir.'/*_create_users_table.php');
         $this->runMigration($userFiles[0]);
 
         // 2. Create categories table
@@ -280,7 +281,7 @@ class CrudOperationsTest extends TestCase
             ['name' => 'name', 'type' => 'string', 'modifiers' => ['length' => 255]],
         ];
         $this->migrationGen->generate('Category', $catFields, [], true, false, []);
-        $catFiles = glob($this->migrationDir . '/*_create_categories_table.php');
+        $catFiles = glob($this->migrationDir.'/*_create_categories_table.php');
         $this->runMigration($catFiles[0]);
 
         // 3. Create tags table
@@ -288,7 +289,7 @@ class CrudOperationsTest extends TestCase
             ['name' => 'name', 'type' => 'string', 'modifiers' => ['length' => 255]],
         ];
         $this->migrationGen->generate('Tag', $tagFields, [], true, false, []);
-        $tagFiles = glob($this->migrationDir . '/*_create_tags_table.php');
+        $tagFiles = glob($this->migrationDir.'/*_create_tags_table.php');
         $this->runMigration($tagFiles[0]);
 
         // 4. Create posts table with belongsTo user and category
@@ -323,11 +324,11 @@ class CrudOperationsTest extends TestCase
             ],
         ];
         $this->migrationGen->generate('Post', $postFields, [], true, true, $postRelationships);
-        $postFiles = glob($this->migrationDir . '/*_create_posts_table.php');
+        $postFiles = glob($this->migrationDir.'/*_create_posts_table.php');
         $this->runMigration($postFiles[0]);
 
         // 5. Create pivot table
-        $pivotFiles = glob($this->migrationDir . '/*_create_post_tag_table.php');
+        $pivotFiles = glob($this->migrationDir.'/*_create_post_tag_table.php');
         $this->assertCount(1, $pivotFiles);
         $this->runMigration($pivotFiles[0]);
 
@@ -345,7 +346,7 @@ class CrudOperationsTest extends TestCase
             ],
         ];
         $this->migrationGen->generate('Comment', $commentFields, [], true, false, $commentRelationships);
-        $commentFiles = glob($this->migrationDir . '/*_create_comments_table.php');
+        $commentFiles = glob($this->migrationDir.'/*_create_comments_table.php');
         $this->runMigration($commentFiles[0]);
 
         // Verify all tables exist

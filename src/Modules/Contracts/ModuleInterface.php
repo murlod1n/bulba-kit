@@ -2,10 +2,27 @@
 
 namespace Nktlksvch\BulbaKit\Modules\Contracts;
 
+use Nktlksvch\BulbaKit\Console\Commands\BulbaInstallCommand;
+use Nktlksvch\BulbaKit\Modules\ModuleRegistry;
+
+/**
+ * Contract for installable modules.
+ *
+ * Modules are optional, user-selected components that provide complex functionality
+ * beyond standard CRUD (middleware, caching, WebSocket support, etc.).
+ * Unlike DefaultCrud resources, modules have full control over their installation
+ * logic via the install() method.
+ *
+ * Modules are selected via multiselect during `bulba:install` and their
+ * navigation items are merged into the sidebar.
+ *
+ * @see ModuleRegistry
+ * @see BulbaInstallCommand::selectModules()
+ */
 interface ModuleInterface
 {
     /**
-     * Module display name (e.g., 'Website Settings').
+     * Module display name (e.g., 'Redirects').
      */
     public function name(): string;
 
@@ -15,71 +32,30 @@ interface ModuleInterface
     public function description(): string;
 
     /**
-     * Lucide icon name as string (e.g., 'settings', 'arrow-right-left').
+     * Lucide icon name as string (e.g., 'arrow-right-left').
      */
     public function icon(): string;
 
     /**
-     * Eloquent model name (e.g., 'Setting', 'Redirect').
-     */
-    public function modelName(): string;
-
-    /**
-     * Database table name (e.g., 'settings', 'redirects').
-     */
-    public function tableName(): string;
-
-    /**
-     * Field definitions in the same format as bulba:make.
+     * Install the module.
      *
-     * @return array<int, array<string, mixed>>
-     */
-    public function fields(): array;
-
-    /**
-     * Controller methods to generate (e.g., ['index', 'create', 'store']).
+     * Called during `bulba:install` after the user selects this module.
+     * The implementation has full control over what gets generated:
+     * migrations, models, controllers, pages, routes, middleware, etc.
      *
-     * @return array<int, string>
-     */
-    public function controllerMethods(): array;
-
-    /**
-     * Generation options (timestamps, softDeletes).
+     * Use app() to resolve generators (MigrationGenerator, ModelGenerator, etc.)
+     * and $command->info() for progress output.
      *
-     * @return array<string, bool>
+     * @param  object  $command  The BulbaInstallCommand instance.
      */
-    public function options(): array;
+    public function install(object $command): void;
 
     /**
      * Navigation items for the sidebar.
      *
+     * Merged into the generated navigation.ts alongside DefaultCrud navigation.
+     *
      * @return array<int, array{group: string, items: array<int, array{title: string, href: string, icon: string}>}>
      */
     public function navigation(): array;
-
-    /**
-     * Seeder class name (e.g., 'SettingSeeder'), or null if no seeder.
-     */
-    public function seederClass(): ?string;
-
-    /**
-     * Seeder stub filename without extension, or null.
-     */
-    public function seederStub(): ?string;
-
-    /**
-     * Custom stubs that override standard generators.
-     * Keys: 'index-page', 'controller', 'controller-method'.
-     * Values: stub filename without extension.
-     *
-     * @return array<string, string>
-     */
-    public function customStubs(): array;
-
-    /**
-     * Post-install hook for module-specific setup (middleware registration, etc.).
-     *
-     * @param  object  $command  The install command instance (for copyStub, executeCommand, etc.)
-     */
-    public function postInstall(object $command): void;
 }

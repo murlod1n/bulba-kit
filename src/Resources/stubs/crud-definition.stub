@@ -1,0 +1,59 @@
+<?php
+
+namespace {{ namespace }};
+
+use Nktlksvch\BulbaKit\AbstractCrudDefinition;
+use App\Models\{{ model }};
+
+class {{ class }} extends AbstractCrudDefinition
+{
+    public static function model(): string
+    {
+        return {{ model }}::class;
+    }
+
+    public static function routeName(): string
+    {
+        return 'admin.{{ modelKebab }}';
+    }
+
+    public static function pagePath(): string
+    {
+        return 'admin/{{ model }}';
+    }
+
+    public static function fields(): array
+    {
+        return [
+            {{ fields }}
+        ];
+    }
+
+    public static function validationRules(): array
+    {
+        return [
+            {{ validationRules }}
+        ];
+    }
+
+    public static function relations(): array
+    {
+        return [
+            {{ relations }}
+        ];
+    }
+
+    public static function mediaCollections(): array
+    {
+        return [
+            {{ mediaCollections }}
+        ];
+    }
+
+    public static function mediaGalleries(): array
+    {
+        return [
+            {{ mediaGalleries }}
+        ];
+    }
+}

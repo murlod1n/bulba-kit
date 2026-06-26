@@ -1,0 +1,15 @@
+<?php
+
+use Spatie\LaravelSettings\Migrations\SettingsMigration;
+
+return new class extends SettingsMigration
+{
+    public function up(): void
+    {
+        $this->migrator->add('seo.meta_title', '');
+        $this->migrator->add('seo.meta_description', '');
+        $this->migrator->add('seo.og_image_url', '');
+        $this->migrator->add('seo.google_analytics_id', '');
+        $this->migrator->add('seo.sitemap_enabled', true);
+    }
+};

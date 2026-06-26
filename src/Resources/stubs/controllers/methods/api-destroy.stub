@@ -1,6 +1,0 @@
-public function destroy($id)
-    {
-        $item = {{ model }}::findOrFail($id);
-        $item->delete();
-        return response()->json(null, 204);
-    }

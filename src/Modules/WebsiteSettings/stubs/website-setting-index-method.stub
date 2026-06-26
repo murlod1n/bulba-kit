@@ -1,8 +1,0 @@
-public function index()
-    {
-        $settings = WebsiteSetting::orderBy('sort')->get()->groupBy('group');
-
-        return Inertia::render('{{ pagesPath }}/{{ model }}/Index', [
-            'settings' => $settings,
-        ]);
-    }

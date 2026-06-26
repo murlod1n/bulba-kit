@@ -3,207 +3,167 @@
 namespace Nktlksvch\BulbaKit\Generators;
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
 
-/**
- * Controller Generator
- *
- * Generates Laravel controller classes for admin CRUD operations.
- * Supports two controller types:
- * - Inertia: Returns Inertia responses with React page components
- * - API: Returns JSON responses for REST API consumption
- *
- * Each controller method is generated from individual stub files,
- * allowing users to customize method implementations.
- */
 class ControllerGenerator
 {
     use LoadsStubs;
+
+    /**
+     * Trait name map: [type][method] => full trait class name.
+     */
+    private const TRAIT_MAP = [
+        'inertia' => [
+            'index' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Inertia\\HasInertiaIndexAction',
+            'create' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Inertia\\HasInertiaCreateAction',
+            'store' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Inertia\\HasInertiaStoreAction',
+            'show' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Inertia\\HasInertiaShowAction',
+            'edit' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Inertia\\HasInertiaEditAction',
+            'update' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Inertia\\HasInertiaUpdateAction',
+            'destroy' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Inertia\\HasInertiaDestroyAction',
+        ],
+        'api' => [
+            'index' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Api\\HasApiIndexAction',
+            'create' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Api\\HasApiCreateAction',
+            'store' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Api\\HasApiStoreAction',
+            'show' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Api\\HasApiShowAction',
+            'edit' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Api\\HasApiEditAction',
+            'update' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Api\\HasApiUpdateAction',
+            'destroy' => 'Nktlksvch\\BulbaKit\\Traits\\Actions\\Api\\HasApiDestroyAction',
+        ],
+    ];
 
     /**
      * Generate a new controller class file.
      *
      * @param  string  $name  Model name (e.g., 'Post')
      * @param  string  $type  Controller type ('inertia' or 'api')
-     * @param  array<int, string>  $methods  Methods to generate (default: all CRUD methods)
+     * @param  array<int, string>  $methods  Methods to generate
      * @param  array<int, array<string, mixed>>  $fields  Field definitions (for image detection)
+     * @param  array<int, string>  $translatableFields  Translatable field names
      */
     public function generate(
         $name,
         $type = 'inertia',
         $methods = ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'],
-        $fields = []
+        $fields = [],
+        $translatableFields = []
     ): void {
         $namespace = config('bulba.controller_namespace', 'App\\Http\\Controllers\\Admin');
         $controllerPath = app_path(
-            str_replace('\\', '/', str_replace('App\\', '', $namespace))."/{$name}Controller.php"
-        );
+            str_replace('\\', '/', str_replace('App\\', '', $namespace)))."/{$name}Controller.php";
 
-        // Skip if controller already exists
         if (File::exists($controllerPath)) {
             return;
         }
 
         $stub = $this->getStub('controller-'.$type);
+        $definitionClass = $name.'CrudDefinition';
         $resourceNamespace = config('bulba.resource_namespace', 'App\\Resources');
-        $pagesPath = config('bulba.react_pages_path', 'admin');
 
-        $imageFields = array_filter($fields, fn ($f) => ($f['type'] ?? '') === 'image');
+        $imageFields = array_filter($fields, fn ($f) => in_array($f['type'] ?? '', ['image', 'gallery']));
         $hasMedia = count($imageFields) > 0;
+        $hasTranslatable = count($translatableFields) > 0;
 
-        // Build method contents from individual stubs
-        $methodContents = [];
-        foreach ($methods as $method) {
-            $methodStub = $this->getMethodStub($type, $method, $hasMedia);
-            $methodContents[] = str_replace(
-                ['{{ model }}', '{{ modelLower }}', '{{ modelLowerPlural }}', '{{ pagesPath }}'],
-                [$name, Str::lower($name), Str::lower(Str::plural($name)), $pagesPath],
-                $methodStub
-            );
-        }
+        [$traitImports, $traitUses] = $this->buildTraitStatements($type, $methods, $hasMedia, $hasTranslatable);
+        $mediaOverrides = $hasMedia
+            ? $this->buildMediaOverrides($type, $methods)
+            : '';
 
-        // Add media helper methods if needed
-        $mediaMethods = $hasMedia ? $this->buildMediaMethods($imageFields) : '';
-
-        // Replace placeholders in controller stub
         $content = str_replace(
             [
-                '{{ namespace }}', '{{ model }}', '{{ modelLower }}',
-                '{{ resourceNamespace }}', '{{ resourceClass }}',
-                '{{ index }}', '{{ create }}', '{{ store }}',
-                '{{ show }}', '{{ edit }}', '{{ update }}', '{{ destroy }}',
-                '{{ mediaMethods }}',
+                '{{ namespace }}',
+                '{{ model }}',
+                '{{ definitionClass }}',
+                '{{ resourceNamespace }}',
+                '{{ traitImports }}',
+                '{{ traitUses }}',
+                '{{ mediaOverrides }}',
             ],
-            array_merge(
-                [$namespace, $name, Str::lower($name), $resourceNamespace, $name.'Resource'],
-                $this->getMethodPlaceholders($methods, $methodContents),
-                [$mediaMethods]
-            ),
+            [
+                $namespace,
+                $name,
+                $definitionClass,
+                $resourceNamespace,
+                $traitImports,
+                $traitUses,
+                $mediaOverrides,
+            ],
             $stub
         );
-
-        // Add media imports if needed
-        if ($hasMedia) {
-            $content = str_replace(
-                'use Inertia\Inertia;',
-                "use Illuminate\Http\UploadedFile;\nuse Inertia\Inertia;",
-                $content
-            );
-        }
 
         File::ensureDirectoryExists(dirname($controllerPath));
         File::put($controllerPath, $content);
     }
 
     /**
-     * Build method placeholders array for stub replacement.
+     * Build trait import and use statements.
      *
-     * Maps each method name to its content, using empty string for methods
-     * not in the selected methods list.
-     *
+     * @param  string  $type  Controller type
      * @param  array<int, string>  $methods  Selected methods
-     * @param  array<int, string>  $methodContents  Generated method contents
-     * @return array<int, string> Placeholders indexed by method name
+     * @param  bool  $hasMedia  Whether media fields exist
+     * @param  bool  $hasTranslatable  Whether translatable fields exist
+     * @return array{0: string, 1: string} [import statements, use statement]
      */
-    protected function getMethodPlaceholders(array $methods, array $methodContents): array
+    protected function buildTraitStatements(string $type, array $methods, bool $hasMedia, bool $hasTranslatable = false): array
     {
-        $placeholders = [];
-        $allMethods = ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'];
-        $methodIndex = 0;
+        $shortNames = [];
+        $imports = [];
 
-        foreach ($allMethods as $method) {
-            if (in_array($method, $methods)) {
-                $placeholders[] = $methodContents[$methodIndex];
-                $methodIndex++;
-            } else {
-                $placeholders[] = '';
+        foreach ($methods as $method) {
+            $fqcn = self::TRAIT_MAP[$type][$method] ?? null;
+            if ($fqcn === null) {
+                continue;
             }
+
+            $shortName = class_basename($fqcn);
+            $shortNames[] = $shortName;
+            $imports[] = 'use '.$fqcn.';';
         }
 
-        return $placeholders;
+        if ($hasMedia) {
+            $shortNames[] = 'HasMediaActions';
+            $imports[] = 'use Nktlksvch\\BulbaKit\\Traits\\HasMediaActions;';
+        }
+
+        if ($hasTranslatable) {
+            $shortNames[] = 'HasTranslationHelpers';
+            $imports[] = 'use Nktlksvch\\BulbaKit\\Traits\\HasTranslationHelpers;';
+        }
+
+        $useStatements = implode("\n", array_map(fn ($t) => "    use {$t};", $shortNames));
+
+        return [
+            implode("\n", $imports),
+            $useStatements,
+        ];
     }
 
     /**
-     * Get a method stub file content.
+     * Build media override methods for store/update.
      *
-     * @param  string  $type  Controller type ('inertia' or 'api')
-     * @param  string  $method  Method name
-     * @param  bool  $hasMedia  Whether to use media-aware stubs
-     * @return string Method stub content
+     * @param  string  $type  Controller type
+     * @param  array<int, string>  $methods  Selected methods
+     * @return string Override method code
      */
-    protected function getMethodStub($type, $method, bool $hasMedia = false): string
+    protected function buildMediaOverrides(string $type, array $methods): string
     {
-        // Use media-aware stubs for store/update when image fields exist
-        if ($hasMedia && in_array($method, ['store', 'update'])) {
-            $mediaStub = $this->getPackageStubPath("controllers/methods/{$type}-{$method}-media");
-            if (File::exists($mediaStub.'.stub')) {
-                return File::get($mediaStub.'.stub');
-            }
+        $overrides = [];
+
+        if (in_array('store', $methods)) {
+            $overrides[] = $this->getSubStub(
+                'media-overrides',
+                $type.'-store-media'
+            );
         }
 
-        return $this->getSubStub('controllers/methods', "{$type}-{$method}");
-    }
-
-    /**
-     * Build media helper methods for controllers with image fields.
-     *
-     * @param  array<int, array<string, mixed>>  $imageFields  Image field definitions
-     * @return string Method code
-     */
-    protected function buildMediaMethods(array $imageFields): string
-    {
-        $collections = [];
-        foreach ($imageFields as $field) {
-            $collection = $field['modifiers']['collection'] ?? $field['name'];
-            $collections[$field['name']] = $collection;
+        if (in_array('update', $methods)) {
+            $overrides[] = $this->getSubStub(
+                'media-overrides',
+                $type.'-update-media'
+            );
         }
 
-        $uploadCases = '';
-        foreach ($collections as $fieldName => $collection) {
-            $uploadCases .= <<<PHP
-
-        if (\$request->file('{$fieldName}')) {
-            \$item->clearMediaCollection('{$collection}');
-            \$item->addMedia(\$request->file('{$fieldName}'))
-                ->withCustomProperties(['alt' => \$request->input('{$fieldName}_alt', '')])
-                ->toMediaCollection('{$collection}');
-        }
-
-PHP;
-        }
-
-        $removalCases = '';
-        foreach ($collections as $fieldName => $collection) {
-            $removalCases .= <<<PHP
-
-        if (\$request->input('remove_{$fieldName}')) {
-            \$item->clearMediaCollection('{$collection}');
-        }
-
-PHP;
-        }
-
-        return <<<PHP
-
-    protected function handleMediaUpload(\$item, Request \$request): void
-    {
-{$uploadCases}    }
-
-    protected function handleMediaRemoval(\$item, Request \$request): void
-    {
-{$removalCases}    }
-
-    protected function updateMediaAlt(\$item, Request \$request): void
-    {
-        foreach (\$item->getMedia() as \$media) {
-            \$altKey = \$media->collection_name . '_alt';
-            if (\$request->has(\$altKey)) {
-                \$media->setCustomProperty('alt', \$request->input(\$altKey));
-                \$media->save();
-            }
-        }
-    }
-PHP;
+        return implode("\n", $overrides);
     }
 }

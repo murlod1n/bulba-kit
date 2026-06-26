@@ -8,11 +8,13 @@ import {
     SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useTrans } from '@/hooks/use-trans';
 import { resolveIcon } from '@/lib/icon-map';
 import type { NavGroup } from '@/types/navigation';
 
 export function NavMain({ groups = [] }: { groups: NavGroup[] }) {
     const { isCurrentUrl } = useCurrentUrl();
+    const { t } = useTrans();
 
     return (
         <>
@@ -29,10 +31,10 @@ export function NavMain({ groups = [] }: { groups: NavGroup[] }) {
                                         <SidebarMenuButton
                                             render={<Link href={item.href} prefetch />}
                                             isActive={isCurrentUrl(item.href)}
-                                            tooltip={{ children: item.title }}
+                                            tooltip={{ children: t(item.titleKey ?? item.title) }}
                                         >
                                             {Icon && <Icon />}
-                                            <span>{item.title}</span>
+                                            <span>{t(item.titleKey ?? item.title)}</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 );

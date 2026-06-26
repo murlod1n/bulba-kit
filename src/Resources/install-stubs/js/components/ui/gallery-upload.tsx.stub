@@ -1,0 +1,275 @@
+import React, { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { GripVerticalIcon, XIcon, UploadIcon, ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export interface GalleryItem {
+    id?: number;
+    url: string;
+    thumb?: string;
+    alt?: string;
+}
+
+interface GalleryUploadProps {
+    label: string;
+    value?: GalleryItem[];
+    error?: string;
+    onChange: (files: File[]) => void;
+    onRemove: (id: number) => void;
+    onReorder: (ids: number[]) => void;
+    onAltChange: (id: number, alt: string) => void;
+    maxFiles?: number;
+}
+
+interface SortableImageProps {
+    item: GalleryItem;
+    onRemove: (id: number) => void;
+    onAltChange: (id: number, alt: string) => void;
+}
+
+function SortableImage({ item, onRemove, onAltChange }: SortableImageProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: item.id! });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                'relative group rounded-md border overflow-hidden',
+                isDragging && 'opacity-50 ring-2 ring-primary'
+            )}
+        >
+            <img
+                src={item.thumb || item.url}
+                alt={item.alt || ''}
+                className="h-24 w-24 object-cover"
+            />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white hover:text-white hover:bg-white/20 cursor-grab"
+                    {...attributes}
+                    {...listeners}
+                >
+                    <GripVerticalIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white hover:text-white hover:bg-destructive/80"
+                    onClick={() => onRemove(item.id!)}
+                >
+                    <XIcon className="h-4 w-4" />
+                </Button>
+            </div>
+            <Input
+                value={item.alt ?? ''}
+                onChange={(e) => onAltChange(item.id!, e.target.value)}
+                placeholder="Alt text"
+                className="h-7 text-xs rounded-none border-0 border-t"
+            />
+        </div>
+    );
+}
+
+interface PreviewImageProps {
+    file: File;
+    index: number;
+    onRemove: (index: number) => void;
+}
+
+function PreviewImage({ file, index, onRemove }: PreviewImageProps) {
+    const [preview] = useState(() => URL.createObjectURL(file));
+
+    return (
+        <div className="relative group rounded-md border overflow-hidden">
+            <img
+                src={preview}
+                alt={file.name}
+                className="h-24 w-24 object-cover"
+            />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white hover:text-white hover:bg-destructive/80"
+                    onClick={() => onRemove(index)}
+                >
+                    <XIcon className="h-4 w-4" />
+                </Button>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-1 py-0.5 truncate">
+                {file.name}
+            </div>
+        </div>
+    );
+}
+
+export function GalleryUpload({
+    label,
+    value = [],
+    error,
+    onChange,
+    onRemove,
+    onReorder,
+    onAltChange,
+    maxFiles = 0,
+}: GalleryUploadProps) {
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+
+    const onDrop = useCallback(
+        (acceptedFiles: File[]) => {
+            const remaining = maxFiles > 0 ? maxFiles - value.length - pendingFiles.length : acceptedFiles.length;
+            const filesToAdd = acceptedFiles.slice(0, remaining);
+            setPendingFiles((prev) => [...prev, ...filesToAdd]);
+            onChange([...pendingFiles, ...filesToAdd]);
+        },
+        [maxFiles, value.length, pendingFiles, onChange]
+    );
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: { 'image/*': [] },
+        multiple: true,
+        maxFiles: maxFiles > 0 ? maxFiles - value.length : undefined,
+    });
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const ids = value.map((item) => item.id!);
+            const oldIndex = ids.indexOf(active.id as number);
+            const newIndex = ids.indexOf(over.id as number);
+            const newIds = arrayMove(ids, oldIndex, newIndex);
+            onReorder(newIds);
+        }
+    };
+
+    const removePendingFile = (index: number) => {
+        const newFiles = pendingFiles.filter((_, i) => i !== index);
+        setPendingFiles(newFiles);
+        onChange(newFiles);
+    };
+
+    const hasExistingImages = value.length > 0;
+    const hasPendingFiles = pendingFiles.length > 0;
+    const canAddMore = maxFiles === 0 || value.length + pendingFiles.length < maxFiles;
+
+    return (
+        <Field data-invalid={!!error}>
+            <FieldLabel>{label}</FieldLabel>
+
+            {hasExistingImages && (
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext
+                        items={value.map((item) => item.id!)}
+                        strategy={rectSortingStrategy}
+                    >
+                        <div className="flex flex-wrap gap-2">
+                            {value.map((item) => (
+                                <SortableImage
+                                    key={item.id}
+                                    item={item}
+                                    onRemove={onRemove}
+                                    onAltChange={onAltChange}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
+            )}
+
+            {hasPendingFiles && (
+                <div className="flex flex-wrap gap-2">
+                    {pendingFiles.map((file, index) => (
+                        <PreviewImage
+                            key={`${file.name}-${index}`}
+                            file={file}
+                            index={index}
+                            onRemove={removePendingFile}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {canAddMore && (
+                <div
+                    {...getRootProps()}
+                    className={cn(
+                        'flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 cursor-pointer transition-colors',
+                        isDragActive
+                            ? 'border-primary bg-primary/5'
+                            : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+                    )}
+                >
+                    <input {...getInputProps()} />
+                    <div className="rounded-full bg-muted p-3">
+                        {isDragActive ? (
+                            <UploadIcon className="h-6 w-6 text-primary" />
+                        ) : (
+                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                        )}
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm font-medium">
+                            {isDragActive ? 'Drop images here' : 'Drag & drop images here'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            or click to browse
+                            {maxFiles > 0 && ` (${value.length + pendingFiles.length}/${maxFiles})`}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {error && <FieldDescription>{error}</FieldDescription>}
+        </Field>
+    );
+}

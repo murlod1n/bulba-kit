@@ -1,0 +1,67 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Http\Controllers\Controller;
+use App\Settings\Website\GeneralSettings;
+use App\Settings\Website\SeoSettings;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class WebsiteSettingController extends Controller
+{
+    public function index(GeneralSettings $general, SeoSettings $seo)
+    {
+        return Inertia::render('{{ pagesPath }}/WebsiteSetting/Index', [
+            'general' => [
+                'site_name' => $general->site_name,
+                'site_description' => $general->site_description,
+                'site_url' => $general->site_url,
+                'admin_email' => $general->admin_email,
+                'timezone' => $general->timezone,
+                'locale' => $general->locale,
+            ],
+            'seo' => [
+                'meta_title' => $seo->meta_title,
+                'meta_description' => $seo->meta_description,
+                'og_image_url' => $seo->og_image_url,
+                'google_analytics_id' => $seo->google_analytics_id,
+                'sitemap_enabled' => $seo->sitemap_enabled,
+            ],
+        ]);
+    }
+
+    public function update(Request $request, GeneralSettings $general, SeoSettings $seo)
+    {
+        $group = $request->input('group');
+
+        if ($group === 'general') {
+            $validated = $request->validate([
+                'site_name' => ['required', 'string', 'max:255'],
+                'site_description' => ['nullable', 'string', 'max:500'],
+                'site_url' => ['nullable', 'url', 'max:255'],
+                'admin_email' => ['nullable', 'email', 'max:255'],
+                'timezone' => ['required', 'string', 'max:64'],
+                'locale' => ['required', 'string', 'max:10'],
+            ]);
+
+            $validated = array_map(fn ($v) => $v ?? '', $validated);
+            $general->fill($validated)->save();
+        }
+
+        if ($group === 'seo') {
+            $validated = $request->validate([
+                'meta_title' => ['nullable', 'string', 'max:255'],
+                'meta_description' => ['nullable', 'string', 'max:500'],
+                'og_image_url' => ['nullable', 'url', 'max:500'],
+                'google_analytics_id' => ['nullable', 'string', 'max:50'],
+                'sitemap_enabled' => ['boolean'],
+            ]);
+
+            $validated = array_map(fn ($v) => $v ?? '', $validated);
+            $seo->fill($validated)->save();
+        }
+
+        return redirect()->back()->with('success', 'Settings saved.');
+    }
+}

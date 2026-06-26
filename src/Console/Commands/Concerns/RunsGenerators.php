@@ -4,10 +4,10 @@ namespace Nktlksvch\BulbaKit\Console\Commands\Concerns;
 
 use Nktlksvch\BulbaKit\Generators\AiConfigGenerator;
 use Nktlksvch\BulbaKit\Generators\ControllerGenerator;
+use Nktlksvch\BulbaKit\Generators\CrudDefinitionGenerator;
 use Nktlksvch\BulbaKit\Generators\MigrationGenerator;
 use Nktlksvch\BulbaKit\Generators\ModelGenerator;
 use Nktlksvch\BulbaKit\Generators\ReactPageGenerator;
-use Nktlksvch\BulbaKit\Generators\ResourceGenerator;
 use Nktlksvch\BulbaKit\Generators\RouteGenerator;
 
 use function Laravel\Prompts\note;
@@ -21,6 +21,8 @@ use function Laravel\Prompts\progress;
  */
 trait RunsGenerators
 {
+    use GeneratesTranslations;
+
     /**
      * Run the complete generation pipeline.
      *
@@ -35,6 +37,7 @@ trait RunsGenerators
      * @param  bool  $withSoftDeletes  Whether to include soft deletes
      * @param  string  $controllerType  Controller type (inertia/api)
      * @param  array<int, string>  $controllerMethods  Selected controller methods
+     * @param  array<int, string>  $translatableFields  Translatable field names
      */
     protected function runGenerators(
         string $name,
@@ -44,11 +47,12 @@ trait RunsGenerators
         bool $withTimestamps,
         bool $withSoftDeletes,
         string $controllerType,
-        array $controllerMethods
+        array $controllerMethods,
+        array $translatableFields = []
     ): void {
         $this->runMainGenerators(
             $name, $fields, $relationships, $aiFields,
-            $withTimestamps, $withSoftDeletes, $controllerType, $controllerMethods
+            $withTimestamps, $withSoftDeletes, $controllerType, $controllerMethods, $translatableFields
         );
 
         $this->runInverseGenerators($name, $relationships);
@@ -65,6 +69,7 @@ trait RunsGenerators
      * @param  bool  $withSoftDeletes  Whether to include soft deletes
      * @param  string  $controllerType  Controller type (inertia/api)
      * @param  array<int, string>  $controllerMethods  Selected controller methods
+     * @param  array<int, string>  $translatableFields  Translatable field names
      */
     protected function runMainGenerators(
         string $name,
@@ -74,7 +79,8 @@ trait RunsGenerators
         bool $withTimestamps,
         bool $withSoftDeletes,
         string $controllerType,
-        array $controllerMethods
+        array $controllerMethods,
+        array $translatableFields = []
     ): void {
         $steps = [
             'Creating migration...',
@@ -84,24 +90,25 @@ trait RunsGenerators
             'Creating AI config...',
             'Creating React pages...',
             'Updating routes...',
+            'Generating translations...',
         ];
 
         progress('Generating resource...', $steps, function ($step) use (
             $name, $fields, $relationships, $aiFields,
-            $withTimestamps, $withSoftDeletes, $controllerType, $controllerMethods
+            $withTimestamps, $withSoftDeletes, $controllerType, $controllerMethods, $translatableFields
         ) {
             match ($step) {
                 'Creating migration...' => app(MigrationGenerator::class)->generate(
-                    $name, $fields, $aiFields, $withTimestamps, $withSoftDeletes, $relationships
+                    $name, $fields, $aiFields, $withTimestamps, $withSoftDeletes, $relationships, $translatableFields
                 ),
                 'Creating model...' => app(ModelGenerator::class)->generate(
-                    $name, $fields, $withSoftDeletes, $relationships
+                    $name, $fields, $withSoftDeletes, $relationships, $translatableFields
                 ),
-                'Creating resource class...' => app(ResourceGenerator::class)->generate(
-                    $name, $fields, $relationships
+                'Creating resource class...' => app(CrudDefinitionGenerator::class)->generate(
+                    $name, $fields, $relationships, $translatableFields
                 ),
                 'Creating controller...' => app(ControllerGenerator::class)->generate(
-                    $name, $controllerType, $controllerMethods, $fields
+                    $name, $controllerType, $controllerMethods, $fields, $translatableFields
                 ),
                 'Creating AI config...' => app(AiConfigGenerator::class)->generate(
                     $name, $aiFields
@@ -112,6 +119,7 @@ trait RunsGenerators
                 'Updating routes...' => app(RouteGenerator::class)->generate(
                     $name, $controllerType, $controllerMethods
                 ),
+                'Generating translations...' => $this->generateUiTranslations($name, $fields),
             };
         });
     }
@@ -156,7 +164,7 @@ trait RunsGenerators
             );
 
             // Add inverse relation to target resource
-            app(ResourceGenerator::class)->addInverseRelation(
+            app(CrudDefinitionGenerator::class)->addInverseRelation(
                 $rel['target'],
                 $inverse['type'],
                 $name,

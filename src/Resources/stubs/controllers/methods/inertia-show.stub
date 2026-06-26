@@ -1,9 +1,0 @@
-public function show($id)
-    {
-        $item = {{ model }}::with($this->getRelationNames())->findOrFail($id);
-        return Inertia::render('{{ pagesPath }}/{{ model }}/Show', [
-            'item' => $item,
-            'fields' => $this->resource->fields(),
-            'relations' => $this->resource->relations(),
-        ]);
-    }

@@ -2,6 +2,8 @@
 
 namespace Nktlksvch\BulbaKit\Console\Commands\Concerns;
 
+use Illuminate\Support\Str;
+
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
@@ -85,7 +87,8 @@ trait AsksForFields
                 'datetime' => 'datetime',
                 'timestamp' => 'timestamp',
                 'json' => 'json',
-                'image' => 'image (Media Library)',
+                'image' => 'image (single, Media Library)',
+                'gallery' => 'gallery (multiple, Media Library)',
             ],
             default: 'string'
         );
@@ -117,6 +120,14 @@ trait AsksForFields
             $modifiers['thumb_width'] = (int) text('Thumbnail width', default: '200');
             $modifiers['thumb_height'] = (int) text('Thumbnail height', default: '200');
             $modifiers['single'] = true;
+        }
+
+        if ($type === 'gallery') {
+            $modifiers['collection'] = text('Media collection name', default: Str::snake(Str::plural($name)));
+            $modifiers['thumb_width'] = (int) text('Thumbnail width', default: '200');
+            $modifiers['thumb_height'] = (int) text('Thumbnail height', default: '200');
+            $modifiers['max_files'] = (int) text('Max files (0 = unlimited)', default: '0');
+            $modifiers['single'] = false;
         }
 
         // General modifiers

@@ -1,0 +1,18 @@
+import { usePage } from '@inertiajs/react';
+
+interface TranslationPageProps {
+    translations: Record<string, string>;
+    locale: string;
+    locales: string[];
+    [key: string]: unknown;
+}
+
+export function useTrans() {
+    const { translations, locale, locales } = usePage<TranslationPageProps>().props;
+
+    const t = (key: string): string => {
+        return translations[key] ?? key;
+    };
+
+    return { t, locale, locales };
+}

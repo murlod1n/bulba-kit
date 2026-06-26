@@ -2,9 +2,9 @@
 
 namespace Nktlksvch\BulbaKit\Tests\Unit\Builders;
 
-use PHPUnit\Framework\TestCase;
-use Nktlksvch\BulbaKit\Generators\Builders\RelationsBuilder;
 use Nktlksvch\BulbaKit\Generators\Builders\ArrayRenderer;
+use Nktlksvch\BulbaKit\Generators\Builders\RelationsBuilder;
+use PHPUnit\Framework\TestCase;
 
 class RelationsBuilderTest extends TestCase
 {
@@ -12,7 +12,7 @@ class RelationsBuilderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->builder = new RelationsBuilder();
+        $this->builder = new RelationsBuilder;
     }
 
     public function test_build_empty_relationships(): void
@@ -22,7 +22,7 @@ class RelationsBuilderTest extends TestCase
         $this->assertEmpty($result);
     }
 
-    public function test_build_belongsTo_relationship(): void
+    public function test_build_belongs_to_relationship(): void
     {
         $relationships = [
             [
@@ -38,12 +38,12 @@ class RelationsBuilderTest extends TestCase
 
         $this->assertArrayHasKey('category', $result);
         $this->assertSame('belongsTo', $result['category']['type']);
-        $this->assertSame(ArrayRenderer::EXPRESSION_PREFIX . '\\App\\Models\\Category::class', $result['category']['model']);
+        $this->assertSame(ArrayRenderer::EXPRESSION_PREFIX.'\\App\\Models\\Category::class', $result['category']['model']);
         $this->assertSame('category_id', $result['category']['foreign_key']);
         $this->assertSame('name', $result['category']['display_field']);
     }
 
-    public function test_build_hasOne_relationship(): void
+    public function test_build_has_one_relationship(): void
     {
         $relationships = [
             [
@@ -59,11 +59,11 @@ class RelationsBuilderTest extends TestCase
 
         $this->assertArrayHasKey('profile', $result);
         $this->assertSame('hasOne', $result['profile']['type']);
-        $this->assertSame(ArrayRenderer::EXPRESSION_PREFIX . '\\App\\Models\\Profile::class', $result['profile']['model']);
+        $this->assertSame(ArrayRenderer::EXPRESSION_PREFIX.'\\App\\Models\\Profile::class', $result['profile']['model']);
         $this->assertSame('user_id', $result['profile']['foreign_key']);
     }
 
-    public function test_build_hasMany_relationship(): void
+    public function test_build_has_many_relationship(): void
     {
         $relationships = [
             [
@@ -82,7 +82,7 @@ class RelationsBuilderTest extends TestCase
         $this->assertArrayNotHasKey('foreign_key', $result['posts']);
     }
 
-    public function test_build_belongsToMany_relationship(): void
+    public function test_build_belongs_to_many_relationship(): void
     {
         $relationships = [
             [
@@ -136,7 +136,7 @@ class RelationsBuilderTest extends TestCase
         $this->assertArrayHasKey('tags', $result);
     }
 
-    public function test_build_hasOne_has_foreign_key_in_output(): void
+    public function test_build_has_one_has_foreign_key_in_output(): void
     {
         $relationships = [
             [
@@ -154,7 +154,7 @@ class RelationsBuilderTest extends TestCase
         $this->assertSame('user_id', $result['profile']['foreign_key']);
     }
 
-    public function test_build_hasMany_has_no_foreign_key_in_output(): void
+    public function test_build_has_many_has_no_foreign_key_in_output(): void
     {
         $relationships = [
             [

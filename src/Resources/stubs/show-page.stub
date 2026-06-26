@@ -29,6 +29,7 @@ interface FieldDef {
     name: string;
     label?: string;
     type: string;
+    translatable?: boolean;
 }
 
 interface RelationDef {
@@ -41,11 +42,12 @@ interface PageProps {
     item: Record<string, unknown>;
     fields: FieldDef[];
     relations: Record<string, Record<string, RelationDef>>;
+    locale: string;
     [key: string]: unknown;
 }
 
 export default function Show() {
-    const { item, fields, relations } = usePage<PageProps>().props;
+    const { item, fields, relations, locale } = usePage<PageProps>().props;
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const handleDelete = () => {
@@ -105,9 +107,25 @@ export default function Show() {
                                         {field.label || field.name}
                                     </dt>
                                     <dd className="text-sm font-medium">
-                                        {field.type === 'boolean'
-                                            ? (item[field.name] ? <Badge>Yes</Badge> : <Badge variant="secondary">No</Badge>)
-                                            : (getRelatedLabel(field.name) ?? (item[field.name] !== undefined && item[field.name] !== null ? String(item[field.name]) : '—'))
+                                        {field.type === 'image'
+                                            ? (item[`${field.name}_url`]
+                                                ? <img src={item[`${field.name}_url`] as string} alt={(item[`${field.name}_alt`] as string) || ''} className="max-w-xs max-h-48 rounded-md object-cover" />
+                                                : <span className="text-muted-foreground">—</span>
+                                            )
+                                            : field.type === 'gallery'
+                                                ? ((item[field.name] as Array<{url: string; alt?: string}>)?.length
+                                                    ? <div className="flex flex-wrap gap-2">
+                                                        {(item[field.name] as Array<{url: string; alt?: string}>).map((img, i) => (
+                                                            <img key={i} src={img.url} alt={img.alt || ''} className="h-20 w-20 rounded-md object-cover" />
+                                                        ))}
+                                                      </div>
+                                                    : <span className="text-muted-foreground">—</span>
+                                                )
+                                                : field.type === 'boolean'
+                                                    ? (item[field.name] ? <Badge>Yes</Badge> : <Badge variant="secondary">No</Badge>)
+                                                    : field.translatable
+                                                        ? (String(((item[field.name] as Record<string, string>) || {})[locale] ?? '—'))
+                                                        : (getRelatedLabel(field.name) ?? (item[field.name] !== undefined && item[field.name] !== null ? String(item[field.name]) : '—'))
                                         }
                                     </dd>
                                 </div>

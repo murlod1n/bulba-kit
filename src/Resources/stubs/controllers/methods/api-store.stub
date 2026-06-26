@@ -1,8 +1,0 @@
-public function store(Request $request)
-    {
-        $validated = $request->validate($this->resource->validationRules());
-        $item = {{ model }}::create($validated);
-        $this->syncBelongsToMany($item, $request);
-        $this->runAiGeneration($item);
-        return response()->json($item, 201);
-    }

@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class HandleLocale
+{
+    /**
+     * Handle an incoming request.
+     *
+     * Sets the application locale based on:
+     * 1. Query parameter ?lang=xx
+     * 2. Session value
+     * 3. Default locale from config
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        $locales = config('bulba.locales', ['en']);
+        $defaultLocale = config('bulba.default_locale', 'en');
+
+        // Priority 1: query parameter
+        if ($request->has('lang') && in_array($request->query('lang'), $locales)) {
+            $locale = $request->query('lang');
+            session()->put('locale', $locale);
+        }
+        // Priority 2: session
+        elseif (session()->has('locale') && in_array(session('locale'), $locales)) {
+            $locale = session('locale');
+        }
+        // Priority 3: config default
+        else {
+            $locale = $defaultLocale;
+        }
+
+        app()->setLocale($locale);
+
+        return $next($request);
+    }
+}

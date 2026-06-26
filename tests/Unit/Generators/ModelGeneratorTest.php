@@ -9,15 +9,16 @@ use Nktlksvch\BulbaKit\Tests\TestCase;
 class ModelGeneratorTest extends TestCase
 {
     private ModelGenerator $generator;
+
     private string $modelsDir;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->generator = new ModelGenerator();
-        $this->modelsDir = $this->tempDir . '/app/Models';
+        $this->generator = new ModelGenerator;
+        $this->modelsDir = $this->tempDir.'/app/Models';
         mkdir($this->modelsDir, 0755, true);
-        $this->app->useAppPath($this->tempDir . '/app');
+        $this->app->useAppPath($this->tempDir.'/app');
     }
 
     public function test_generate_creates_model_file(): void
@@ -28,7 +29,7 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, false, []);
 
-        $this->assertFileExists($this->modelsDir . '/Post.php');
+        $this->assertFileExists($this->modelsDir.'/Post.php');
     }
 
     public function test_generate_model_contains_class_name(): void
@@ -39,7 +40,7 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, false, []);
 
-        $this->assertFileContains($this->modelsDir . '/Post.php', 'class Post extends Model');
+        $this->assertFileContains($this->modelsDir.'/Post.php', 'class Post extends Model');
     }
 
     public function test_generate_model_contains_fillable(): void
@@ -51,7 +52,7 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, false, []);
 
-        $content = file_get_contents($this->modelsDir . '/Post.php');
+        $content = file_get_contents($this->modelsDir.'/Post.php');
         $this->assertStringContainsString("'title', 'body'", $content);
     }
 
@@ -61,7 +62,7 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, false, []);
 
-        $this->assertFileNotContains($this->modelsDir . '/Post.php', 'SoftDeletes');
+        $this->assertFileNotContains($this->modelsDir.'/Post.php', 'SoftDeletes');
     }
 
     public function test_generate_model_with_soft_deletes(): void
@@ -70,11 +71,11 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, true, []);
 
-        $this->assertFileContains($this->modelsDir . '/Post.php', 'use SoftDeletes');
-        $this->assertFileContains($this->modelsDir . '/Post.php', 'use Illuminate\\Database\\Eloquent\\SoftDeletes');
+        $this->assertFileContains($this->modelsDir.'/Post.php', 'use SoftDeletes');
+        $this->assertFileContains($this->modelsDir.'/Post.php', 'use Illuminate\\Database\\Eloquent\\SoftDeletes');
     }
 
-    public function test_generate_model_with_belongsTo_relationship(): void
+    public function test_generate_model_with_belongs_to_relationship(): void
     {
         $fields = [];
 
@@ -90,14 +91,14 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, false, $relationships);
 
-        $content = file_get_contents($this->modelsDir . '/Post.php');
+        $content = file_get_contents($this->modelsDir.'/Post.php');
         $this->assertStringContainsString('public function category()', $content);
         $this->assertStringContainsString('belongsTo(Category::class', $content);
         $this->assertStringContainsString("'category_id'", $content);
         $this->assertStringContainsString('use App\\Models\\Category;', $content);
     }
 
-    public function test_generate_model_with_hasOne_relationship(): void
+    public function test_generate_model_with_has_one_relationship(): void
     {
         $fields = [];
 
@@ -113,13 +114,13 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('User', $fields, false, $relationships);
 
-        $content = file_get_contents($this->modelsDir . '/User.php');
+        $content = file_get_contents($this->modelsDir.'/User.php');
         $this->assertStringContainsString('public function profile()', $content);
         $this->assertStringContainsString('hasOne(Profile::class', $content);
         $this->assertStringContainsString("'user_id'", $content);
     }
 
-    public function test_generate_model_with_hasMany_relationship(): void
+    public function test_generate_model_with_has_many_relationship(): void
     {
         $fields = [];
 
@@ -135,12 +136,12 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('User', $fields, false, $relationships);
 
-        $content = file_get_contents($this->modelsDir . '/User.php');
+        $content = file_get_contents($this->modelsDir.'/User.php');
         $this->assertStringContainsString('public function posts()', $content);
         $this->assertStringContainsString('hasMany(Post::class', $content);
     }
 
-    public function test_generate_model_with_belongsToMany_relationship(): void
+    public function test_generate_model_with_belongs_to_many_relationship(): void
     {
         $fields = [];
 
@@ -156,7 +157,7 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, false, $relationships);
 
-        $content = file_get_contents($this->modelsDir . '/Post.php');
+        $content = file_get_contents($this->modelsDir.'/Post.php');
         $this->assertStringContainsString('public function tags()', $content);
         $this->assertStringContainsString('belongsToMany(Tag::class', $content);
         $this->assertStringContainsString("'post_tag'", $content);
@@ -192,7 +193,7 @@ class ModelGeneratorTest extends TestCase
 
         $this->generator->generate('Post', $fields, false, $relationships);
 
-        $content = file_get_contents($this->modelsDir . '/Post.php');
+        $content = file_get_contents($this->modelsDir.'/Post.php');
         $this->assertStringContainsString('public function category()', $content);
         $this->assertStringContainsString('public function comments()', $content);
         $this->assertStringContainsString('public function tags()', $content);
@@ -204,14 +205,14 @@ class ModelGeneratorTest extends TestCase
             ['name' => 'title', 'type' => 'string', 'modifiers' => []],
         ];
 
-        File::put($this->modelsDir . '/Post.php', '<?php // existing');
+        File::put($this->modelsDir.'/Post.php', '<?php // existing');
 
         $this->generator->generate('Post', $fields, false, []);
 
-        $this->assertSame('<?php // existing', file_get_contents($this->modelsDir . '/Post.php'));
+        $this->assertSame('<?php // existing', file_get_contents($this->modelsDir.'/Post.php'));
     }
 
-    public function test_add_inverse_relation_injects_hasMany_into_existing_model(): void
+    public function test_add_inverse_relation_injects_has_many_into_existing_model(): void
     {
         $existingModel = <<<'PHP'
 <?php
@@ -226,17 +227,17 @@ class User extends Model
 }
 PHP;
 
-        File::put($this->modelsDir . '/User.php', $existingModel);
+        File::put($this->modelsDir.'/User.php', $existingModel);
 
         $this->generator->addInverseRelation('User', 'hasMany', 'Post', 'user_id');
 
-        $content = file_get_contents($this->modelsDir . '/User.php');
+        $content = file_get_contents($this->modelsDir.'/User.php');
         $this->assertStringContainsString('public function posts()', $content);
         $this->assertStringContainsString('hasMany(Post::class', $content);
         $this->assertStringContainsString('use App\\Models\\Post;', $content);
     }
 
-    public function test_add_inverse_belongsTo_adds_fk_to_fillable(): void
+    public function test_add_inverse_belongs_to_adds_fk_to_fillable(): void
     {
         $existingModel = <<<'PHP'
 <?php
@@ -251,18 +252,18 @@ class Engine extends Model
 }
 PHP;
 
-        File::put($this->modelsDir . '/Engine.php', $existingModel);
+        File::put($this->modelsDir.'/Engine.php', $existingModel);
 
         $this->generator->addInverseRelation('Engine', 'belongsTo', 'Car', 'car_id');
 
-        $content = file_get_contents($this->modelsDir . '/Engine.php');
+        $content = file_get_contents($this->modelsDir.'/Engine.php');
         $this->assertStringContainsString('public function car()', $content);
         $this->assertStringContainsString('belongsTo(Car::class', $content);
         $this->assertStringContainsString("'car_id'", $content);
         $this->assertStringContainsString("'name', 'power', 'car_id'", $content);
     }
 
-    public function test_add_inverse_belongsTo_does_not_duplicate_fk_in_fillable(): void
+    public function test_add_inverse_belongs_to_does_not_duplicate_fk_in_fillable(): void
     {
         $existingModel = <<<'PHP'
 <?php
@@ -277,17 +278,17 @@ class Engine extends Model
 }
 PHP;
 
-        File::put($this->modelsDir . '/Engine.php', $existingModel);
+        File::put($this->modelsDir.'/Engine.php', $existingModel);
 
         $this->generator->addInverseRelation('Engine', 'belongsTo', 'Car', 'car_id');
 
-        $content = file_get_contents($this->modelsDir . '/Engine.php');
+        $content = file_get_contents($this->modelsDir.'/Engine.php');
         $this->assertStringContainsString('public function car()', $content);
         // car_id should appear only once in fillable
         $this->assertStringNotContainsString("'car_id', 'car_id'", $content);
     }
 
-    public function test_add_inverse_relation_injects_belongsToMany_into_existing_model(): void
+    public function test_add_inverse_relation_injects_belongs_to_many_into_existing_model(): void
     {
         $existingModel = <<<'PHP'
 <?php
@@ -302,11 +303,11 @@ class Tag extends Model
 }
 PHP;
 
-        File::put($this->modelsDir . '/Tag.php', $existingModel);
+        File::put($this->modelsDir.'/Tag.php', $existingModel);
 
         $this->generator->addInverseRelation('Tag', 'belongsToMany', 'Post', 'post_tag');
 
-        $content = file_get_contents($this->modelsDir . '/Tag.php');
+        $content = file_get_contents($this->modelsDir.'/Tag.php');
         $this->assertStringContainsString('public function posts()', $content);
         $this->assertStringContainsString('belongsToMany(Post::class', $content);
         $this->assertStringContainsString("'post_tag'", $content);
@@ -333,11 +334,11 @@ class User extends Model
 }
 PHP;
 
-        File::put($this->modelsDir . '/User.php', $existingModel);
+        File::put($this->modelsDir.'/User.php', $existingModel);
 
         $this->generator->addInverseRelation('User', 'hasMany', 'Post', 'user_id');
 
-        $content = file_get_contents($this->modelsDir . '/User.php');
+        $content = file_get_contents($this->modelsDir.'/User.php');
         $this->assertStringContainsString('public function posts()', $content);
     }
 
@@ -345,10 +346,10 @@ PHP;
     {
         $this->generator->addInverseRelation('NonExistent', 'hasMany', 'Post', 'user_id');
 
-        $this->assertFileDoesNotExist($this->modelsDir . '/NonExistent.php');
+        $this->assertFileDoesNotExist($this->modelsDir.'/NonExistent.php');
     }
 
-    public function test_generate_model_belongsToMany_method_name_is_plural(): void
+    public function test_generate_model_belongs_to_many_method_name_is_plural(): void
     {
         $fields = [];
 
@@ -364,11 +365,11 @@ PHP;
 
         $this->generator->generate('Post', $fields, false, $relationships);
 
-        $content = file_get_contents($this->modelsDir . '/Post.php');
+        $content = file_get_contents($this->modelsDir.'/Post.php');
         $this->assertStringContainsString('public function tags()', $content);
     }
 
-    public function test_generate_model_hasMany_method_name_is_plural(): void
+    public function test_generate_model_has_many_method_name_is_plural(): void
     {
         $fields = [];
 
@@ -384,7 +385,7 @@ PHP;
 
         $this->generator->generate('Post', $fields, false, $relationships);
 
-        $content = file_get_contents($this->modelsDir . '/Post.php');
+        $content = file_get_contents($this->modelsDir.'/Post.php');
         $this->assertStringContainsString('public function comments()', $content);
     }
 }

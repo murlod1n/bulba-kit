@@ -4,6 +4,7 @@ namespace Nktlksvch\BulbaKit\Generators;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Nktlksvch\BulbaKit\Generators\Builders\FieldsJsxBuilder;
 use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
 
 /**
@@ -24,6 +25,10 @@ use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
 class ReactPageGenerator
 {
     use LoadsStubs;
+
+    public function __construct(
+        private readonly FieldsJsxBuilder $fieldsJsxBuilder = new FieldsJsxBuilder,
+    ) {}
 
     /**
      * Generate all React page components.
@@ -134,7 +139,7 @@ class ReactPageGenerator
     protected function generateForm($name, $fields, $relationships, $pagesDir): void
     {
         $stub = $this->getStub('form-component');
-        $fieldsJsx = $this->buildFieldsJsx($fields, $relationships);
+        $fieldsJsx = $this->fieldsJsxBuilder->build($fields, $relationships);
 
         $content = str_replace(
             ['{{ model }}', '{{ modelLower }}', '{{ fieldsJsx }}'],
@@ -143,142 +148,5 @@ class ReactPageGenerator
         );
 
         File::put($pagesDir.'/Form.tsx', $content);
-    }
-
-    /**
-     * Build JSX code for form fields using shadcn/ui components.
-     *
-     * Generates appropriate shadcn components based on field type:
-     * - text/json: Field + Textarea
-     * - boolean: Field (horizontal) + Checkbox
-     * - belongsTo: Field + Select with SelectGroup/SelectItem
-     * - integer/decimal: Field + Input (type=number)
-     * - date/datetime: Field + Input (type=date/datetime-local)
-     * - others: Field + Input (type=text)
-     *
-     * Validation uses data-invalid on Field and aria-invalid on the control.
-     *
-     * @param  array<int, array<string, mixed>>  $fields  Field definitions
-     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
-     * @return string TSX code with shadcn component markup
-     */
-    protected function buildFieldsJsx($fields, $relationships): string
-    {
-        $jsx = '';
-
-        foreach ($fields as $field) {
-            $type = $field['type'];
-            $fieldName = $field['name'];
-            $label = Str::title(str_replace('_', ' ', $fieldName));
-
-            if ($type === 'image') {
-                $jsx .= "\n                <ImageUpload\n";
-                $jsx .= "                    label=\"{$label}\"\n";
-                $jsx .= "                    value={data.{$fieldName}_url}\n";
-                $jsx .= "                    thumb={data.{$fieldName}_thumb}\n";
-                $jsx .= "                    alt={data.{$fieldName}_alt}\n";
-                $jsx .= "                    error={errors.{$fieldName}}\n";
-                $jsx .= "                    onChange={(file) => setData('{$fieldName}', file)}\n";
-                $jsx .= "                    onRemove={() => setData('remove_{$fieldName}', true)}\n";
-                $jsx .= "                    onAltChange={(alt) => setData('{$fieldName}_alt', alt)}\n";
-                $jsx .= '                />';
-            } elseif ($type === 'text' || $type === 'json') {
-                $jsx .= "\n                <Field data-invalid={!!errors.{$fieldName}}>\n";
-                $jsx .= "                    <FieldLabel htmlFor=\"{$fieldName}\">{$label}</FieldLabel>\n";
-                $jsx .= "                    <Textarea\n";
-                $jsx .= "                        id=\"{$fieldName}\"\n";
-                $jsx .= "                        name=\"{$fieldName}\"\n";
-                $jsx .= "                        value={data.{$fieldName} ?? ''}\n";
-                $jsx .= "                        onChange={handleChange}\n";
-                $jsx .= "                        aria-invalid={!!errors.{$fieldName}}\n";
-                $jsx .= "                        rows={4}\n";
-                $jsx .= "                    />\n";
-                $jsx .= "                    {errors.{$fieldName} && <FieldDescription>{errors.{$fieldName}}</FieldDescription>}\n";
-                $jsx .= '                </Field>';
-            } elseif ($type === 'boolean') {
-                $jsx .= "\n                <Field data-invalid={!!errors.{$fieldName}} orientation=\"horizontal\">\n";
-                $jsx .= "                    <Checkbox\n";
-                $jsx .= "                        id=\"{$fieldName}\"\n";
-                $jsx .= "                        name=\"{$fieldName}\"\n";
-                $jsx .= "                        checked={!!data.{$fieldName}}\n";
-                $jsx .= "                        onCheckedChange={(checked) => setData('{$fieldName}', checked)}\n";
-                $jsx .= "                    />\n";
-                $jsx .= "                    <FieldLabel htmlFor=\"{$fieldName}\" className=\"font-normal\">{$label}</FieldLabel>\n";
-                $jsx .= "                    {errors.{$fieldName} && <FieldDescription>{errors.{$fieldName}}</FieldDescription>}\n";
-                $jsx .= '                </Field>';
-            } elseif ($this->isBelongsToField($fieldName, $relationships)) {
-                $relKey = $this->getRelationKeyForField($fieldName, $relationships);
-                $jsx .= "\n                <Field data-invalid={!!errors.{$fieldName}}>\n";
-                $jsx .= "                    <FieldLabel htmlFor=\"{$fieldName}\">{$label}</FieldLabel>\n";
-                $jsx .= "                    <Select\n";
-                $jsx .= "                        value={data.{$fieldName} ? String(data.{$fieldName}) : null}\n";
-                $jsx .= "                        onValueChange={(value) => setData('{$fieldName}', Number(value))}\n";
-                $jsx .= "                    >\n";
-                $jsx .= "                        <SelectTrigger id=\"{$fieldName}\" aria-invalid={!!errors.{$fieldName}}>\n";
-                $jsx .= "                            <SelectValue placeholder=\"Select {$label}\" />\n";
-                $jsx .= "                        </SelectTrigger>\n";
-                $jsx .= "                        <SelectContent>\n";
-                $jsx .= "                            <SelectGroup>\n";
-                $jsx .= "                                {selectOptions.{$relKey} && Object.entries(selectOptions.{$relKey}).map(([id, lbl]) => (\n";
-                $jsx .= "                                    <SelectItem key={id} value={String(id)}>{lbl as string}</SelectItem>\n";
-                $jsx .= "                                ))}\n";
-                $jsx .= "                            </SelectGroup>\n";
-                $jsx .= "                        </SelectContent>\n";
-                $jsx .= "                    </Select>\n";
-                $jsx .= "                    {errors.{$fieldName} && <FieldDescription>{errors.{$fieldName}}</FieldDescription>}\n";
-                $jsx .= '                </Field>';
-            } else {
-                $inputType = $type === 'integer' || $type === 'decimal' ? 'number' : ($type === 'date' ? 'date' : ($type === 'datetime' ? 'datetime-local' : 'text'));
-                $stepAttr = $type === 'decimal' ? "\n                        step=\"0.01\"" : '';
-                $jsx .= "\n                <Field data-invalid={!!errors.{$fieldName}}>\n";
-                $jsx .= "                    <FieldLabel htmlFor=\"{$fieldName}\">{$label}</FieldLabel>\n";
-                $jsx .= "                    <Input\n";
-                $jsx .= "                        id=\"{$fieldName}\"\n";
-                $jsx .= "                        name=\"{$fieldName}\"\n";
-                $jsx .= "                        type=\"{$inputType}\"\n";
-                $jsx .= "                        value={data.{$fieldName} ?? ''}\n";
-                $jsx .= "                        onChange={handleChange}\n";
-                $jsx .= "                        aria-invalid={!!errors.{$fieldName}}{$stepAttr}\n";
-                $jsx .= "                    />\n";
-                $jsx .= "                    {errors.{$fieldName} && <FieldDescription>{errors.{$fieldName}}</FieldDescription>}\n";
-                $jsx .= '                </Field>';
-            }
-        }
-
-        return $jsx;
-    }
-
-    /**
-     * Check if a field is a belongsTo foreign key.
-     *
-     * @param  string  $fieldName  Field name
-     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
-     */
-    protected function isBelongsToField($fieldName, $relationships): bool
-    {
-        foreach ($relationships as $rel) {
-            if ($rel['type'] === 'belongsTo' && $rel['foreign_key'] === $fieldName) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Get the relation key for a belongsTo foreign key field.
-     *
-     * @param  string  $fieldName  Field name
-     * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
-     */
-    protected function getRelationKeyForField($fieldName, $relationships): string
-    {
-        foreach ($relationships as $rel) {
-            if ($rel['type'] === 'belongsTo' && $rel['foreign_key'] === $fieldName) {
-                return $rel['name'] ?? str_replace('_id', '', $fieldName);
-            }
-        }
-
-        return str_replace('_id', '', $fieldName);
     }
 }

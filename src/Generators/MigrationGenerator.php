@@ -29,6 +29,7 @@ class MigrationGenerator
      * @param  bool  $withTimestamps  Whether to include timestamps
      * @param  bool  $withSoftDeletes  Whether to include soft deletes
      * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions (for FK constraints)
+     * @param  array<int, string>  $translatableFields  Translatable field names
      */
     public function generate(
         $name,
@@ -36,7 +37,8 @@ class MigrationGenerator
         $aiFields,
         $withTimestamps,
         $withSoftDeletes,
-        $relationships = []
+        $relationships = [],
+        $translatableFields = []
     ): void {
         $table = Str::snake(Str::plural($name));
 
@@ -55,7 +57,7 @@ class MigrationGenerator
                 ],
                 [
                     $table,
-                    $this->buildFieldDefinitions($fields, $aiFields),
+                    $this->buildFieldDefinitions($fields, $aiFields, $translatableFields),
                     $this->buildForeignKeys($relationships),
                     $withTimestamps ? '$table->timestamps();' : '',
                     $withSoftDeletes ? '$table->softDeletes();' : '',
@@ -125,9 +127,10 @@ class MigrationGenerator
      *
      * @param  array<int, array<string, mixed>>  $fields  Field definitions
      * @param  array<int, array<string, mixed>>  $aiFields  AI generation field configs
+     * @param  array<int, string>  $translatableFields  Translatable field names
      * @return string Field definition code
      */
-    protected function buildFieldDefinitions(array $fields, array $aiFields): string
+    protected function buildFieldDefinitions(array $fields, array $aiFields, array $translatableFields = []): string
     {
         $fieldDefinitions = '';
 
@@ -135,8 +138,17 @@ class MigrationGenerator
             $type = $field['type'];
             $mods = $field['modifiers'];
 
-            // Build column definition
-            if (isset($mods['length'])) {
+            // Image and gallery fields are managed by Media Library, not DB columns
+            if ($type === 'image' || $type === 'gallery') {
+                continue;
+            }
+
+            $isTranslatable = in_array($field['name'], $translatableFields);
+
+            // Translatable string/text fields are stored as JSON
+            if ($isTranslatable && in_array($type, ['string', 'text'])) {
+                $line = "\$table->json('{$field['name']}')->nullable()";
+            } elseif (isset($mods['length'])) {
                 $line = "\$table->{$type}('{$field['name']}', {$mods['length']})";
             } else {
                 $line = "\$table->{$type}('{$field['name']}')";

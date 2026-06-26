@@ -1,0 +1,42 @@
+import { Button } from '@/components/ui/button';
+
+interface LocaleSwitcherProps {
+    locales: string[];
+    activeLocale: string;
+    onLocaleChange: (locale: string) => void;
+}
+
+const localeLabels: Record<string, string> = {
+    en: 'English',
+    ru: 'Русский',
+    de: 'Deutsch',
+    fr: 'Français',
+    es: 'Español',
+    it: 'Italiano',
+    pt: 'Português',
+    zh: '中文',
+    ja: '日本語',
+    ko: '한국어',
+    ar: 'العربية',
+};
+
+export function LocaleSwitcher({ locales, activeLocale, onLocaleChange }: LocaleSwitcherProps) {
+    if (locales.length <= 1) {
+        return null;
+    }
+
+    return (
+        <div className="flex gap-1 rounded-lg border p-1">
+            {locales.map((locale) => (
+                <Button
+                    key={locale}
+                    variant={locale === activeLocale ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => onLocaleChange(locale)}
+                >
+                    {localeLabels[locale] ?? locale.toUpperCase()}
+                </Button>
+            ))}
+        </div>
+    );
+}

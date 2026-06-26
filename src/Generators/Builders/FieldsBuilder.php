@@ -13,10 +13,12 @@ use Illuminate\Support\Str;
  *
  * Each field entry contains:
  * - name: database column name
- * - type: field type (string, text, integer, boolean, decimal, date, datetime, timestamp, json)
+ * - type: field type (string, text, integer, boolean, decimal, date, datetime, timestamp, json, image, gallery)
  * - label: human-readable label derived from the field name
  * - nullable (optional): whether the field accepts null values
  * - unique (optional): whether the field has a unique constraint
+ * - collection (optional): media collection name (for image/gallery fields)
+ * - max_files (optional): max number of files (for gallery fields)
  */
 class FieldsBuilder
 {
@@ -28,36 +30,36 @@ class FieldsBuilder
      *
      * @param  array<int, array<string, mixed>>  $fields  Field definitions from askForFields()
      * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions from askForRelationships()
+     * @param  array<int, string>  $translatableFields  Translatable field names
      * @return array<int, array<string, mixed>> Array of field descriptor arrays
      */
-    public function build(array $fields, array $relationships): array
+    public function build(array $fields, array $relationships, array $translatableFields = []): array
     {
         $result = [];
         $fieldNames = array_column($fields, 'name');
 
         foreach ($fields as $field) {
             // Image fields are managed by Media Library, not DB columns
-            // Add virtual fields for URL, thumb, and alt
+            // Keep the original image field for form rendering
             if ($field['type'] === 'image') {
-                $collection = $field['modifiers']['collection'] ?? $field['name'];
+                $result[] = [
+                    'name' => $field['name'],
+                    'type' => 'image',
+                    'label' => Str::title(str_replace('_', ' ', $field['name'])),
+                    'collection' => $field['modifiers']['collection'] ?? $field['name'],
+                ];
 
+                continue;
+            }
+
+            // Gallery fields are managed by Media Library, not DB columns
+            if ($field['type'] === 'gallery') {
                 $result[] = [
-                    'name' => $field['name'].'_url',
-                    'type' => 'string',
-                    'label' => Str::title(str_replace('_', ' ', $field['name'])).' URL',
-                    'readOnly' => true,
-                ];
-                $result[] = [
-                    'name' => $field['name'].'_thumb',
-                    'type' => 'string',
-                    'label' => Str::title(str_replace('_', ' ', $field['name'])).' Thumbnail',
-                    'readOnly' => true,
-                ];
-                $result[] = [
-                    'name' => $field['name'].'_alt',
-                    'type' => 'string',
-                    'label' => Str::title(str_replace('_', ' ', $field['name'])).' Alt Text',
-                    'nullable' => true,
+                    'name' => $field['name'],
+                    'type' => 'gallery',
+                    'label' => Str::title(str_replace('_', ' ', $field['name'])),
+                    'collection' => $field['modifiers']['collection'] ?? Str::snake(Str::plural($field['name'])),
+                    'max_files' => $field['modifiers']['max_files'] ?? 0,
                 ];
 
                 continue;
@@ -74,6 +76,9 @@ class FieldsBuilder
             }
             if (isset($field['modifiers']['unique'])) {
                 $entry['unique'] = true;
+            }
+            if (in_array($field['name'], $translatableFields)) {
+                $entry['translatable'] = true;
             }
 
             $result[] = $entry;

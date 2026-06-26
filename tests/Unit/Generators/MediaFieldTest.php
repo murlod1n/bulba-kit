@@ -4,8 +4,8 @@ namespace Nktlksvch\BulbaKit\Tests\Unit\Generators;
 
 use Illuminate\Support\Facades\File;
 use Nktlksvch\BulbaKit\Generators\ControllerGenerator;
+use Nktlksvch\BulbaKit\Generators\CrudDefinitionGenerator;
 use Nktlksvch\BulbaKit\Generators\ModelGenerator;
-use Nktlksvch\BulbaKit\Generators\ResourceGenerator;
 use Nktlksvch\BulbaKit\Tests\TestCase;
 
 class MediaFieldTest extends TestCase
@@ -94,28 +94,17 @@ class MediaFieldTest extends TestCase
         $this->assertStringContainsString('// media conversions', $content);
     }
 
-    public function test_resource_generator_includes_media_virtual_fields(): void
+    public function test_resource_generator_includes_image_field(): void
     {
-        app(ResourceGenerator::class)->generate('Article', $this->fieldsWithImage(), []);
+        app(CrudDefinitionGenerator::class)->generate('Article', $this->fieldsWithImage(), []);
 
-        $resourcePath = $this->tempDir.'/app/Resources/ArticleResource.php';
+        $resourcePath = $this->tempDir.'/app/Resources/ArticleCrudDefinition.php';
         $this->assertFileExists($resourcePath);
 
         $content = File::get($resourcePath);
-        $this->assertStringContainsString("'image_url'", $content);
-        $this->assertStringContainsString("'image_thumb'", $content);
-        $this->assertStringContainsString("'image_alt'", $content);
-        // Original image field should NOT be in the resource (not a DB column)
-        $this->assertStringNotContainsString("'name' => 'image'", $content);
-    }
-
-    public function test_resource_generator_image_alt_is_nullable(): void
-    {
-        app(ResourceGenerator::class)->generate('Article', $this->fieldsWithImage(), []);
-
-        $content = File::get($this->tempDir.'/app/Resources/ArticleResource.php');
-        $this->assertStringContainsString("'image_alt'", $content);
-        $this->assertStringContainsString("'nullable' => true", $content);
+        $this->assertStringContainsString("'name' => 'image'", $content);
+        $this->assertStringContainsString("'type' => 'image'", $content);
+        $this->assertStringContainsString("'collection' => 'image'", $content);
     }
 
     public function test_controller_generator_uses_media_stubs(): void
@@ -128,7 +117,7 @@ class MediaFieldTest extends TestCase
         $content = File::get($controllerPath);
         $this->assertStringContainsString('handleMediaUpload', $content);
         $this->assertStringContainsString('handleMediaRemoval', $content);
-        $this->assertStringContainsString('use Illuminate\Http\UploadedFile;', $content);
+        $this->assertStringContainsString('HasMediaActions', $content);
     }
 
     public function test_controller_generator_without_image_fields_has_no_media(): void
@@ -141,6 +130,6 @@ class MediaFieldTest extends TestCase
 
         $content = File::get($this->tempDir.'/app/Http/Controllers/Admin/PostController.php');
         $this->assertStringNotContainsString('handleMediaUpload', $content);
-        $this->assertStringNotContainsString('UploadedFile', $content);
+        $this->assertStringNotContainsString('HasMediaActions', $content);
     }
 }

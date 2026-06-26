@@ -4,6 +4,7 @@ namespace Nktlksvch\BulbaKit\Generators;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Nktlksvch\BulbaKit\Generators\Builders\MediaBuilder;
 use Nktlksvch\BulbaKit\Generators\Concerns\LoadsStubs;
 
 /**
@@ -19,6 +20,10 @@ class ModelGenerator
 {
     use LoadsStubs;
 
+    public function __construct(
+        private readonly MediaBuilder $mediaBuilder = new MediaBuilder,
+    ) {}
+
     /**
      * Generate a new Model class file.
      *
@@ -26,8 +31,9 @@ class ModelGenerator
      * @param  array<int, array<string, mixed>>  $fields  Field definitions from askForFields()
      * @param  bool  $withSoftDeletes  Whether to include SoftDeletes trait
      * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions from askForRelationships()
+     * @param  array<int, string>  $translatableFields  Translatable field names
      */
-    public function generate($name, $fields, $withSoftDeletes, $relationships = []): void
+    public function generate($name, $fields, $withSoftDeletes, $relationships = [], $translatableFields = []): void
     {
         $modelPath = app_path("Models/{$name}.php");
 
@@ -38,7 +44,9 @@ class ModelGenerator
 
         $stub = $this->getStub('model');
         $imageFields = array_filter($fields, fn ($f) => ($f['type'] ?? '') === 'image');
-        $hasMedia = count($imageFields) > 0;
+        $galleryFields = array_filter($fields, fn ($f) => ($f['type'] ?? '') === 'gallery');
+        $hasMedia = count($imageFields) > 0 || count($galleryFields) > 0;
+        $hasTranslatable = count($translatableFields) > 0;
 
         $content = str_replace(
             [
@@ -53,19 +61,29 @@ class ModelGenerator
                 '{{ mediaImports }}',
                 '{{ mediaCollections }}',
                 '{{ mediaConversions }}',
+                '{{ mediaAccessors }}',
+                '{{ translatableInterface }}',
+                '{{ translatableTrait }}',
+                '{{ translatableImport }}',
+                '{{ translatableProperties }}',
             ],
             [
                 $name,
-                $this->buildFillableString($fields, $relationships),
-                $this->buildSoftDeleteTrait($withSoftDeletes).($hasMedia ? "    use InteractsWithMedia;\n" : ''),
+                $this->buildFillableString($fields, $relationships, $translatableFields),
+                $this->buildSoftDeleteTrait($withSoftDeletes).($hasMedia ? "    use InteractsWithMedia;\n" : '').($hasTranslatable ? "    use HasTranslations;\n" : ''),
                 $this->buildSoftDeleteImport($withSoftDeletes),
                 $this->buildRelationImports($relationships),
                 $this->buildRelationMethods($relationships),
-                $hasMedia ? ' implements HasMedia' : '',
+                $hasMedia ? ' implements HasMedia' : ($hasTranslatable ? ' implements HasTranslatable' : ''),
                 '', // trait already added in softDeleteTrait
                 $hasMedia ? "\nuse Spatie\\MediaLibrary\\HasMedia;\nuse Spatie\\MediaLibrary\\InteractsWithMedia;\nuse Spatie\\MediaLibrary\\MediaCollections\\Models\\Media;\nuse Spatie\\Image\\Enums\\Fit;" : '',
-                $hasMedia ? $this->buildMediaCollections($imageFields) : $this->buildMediaCollections([]),
-                $hasMedia ? $this->buildMediaConversions($imageFields) : $this->buildMediaConversions([]),
+                $hasMedia ? $this->mediaBuilder->buildMediaCollections($imageFields) : $this->mediaBuilder->buildMediaCollections([]),
+                $hasMedia ? $this->mediaBuilder->buildMediaConversions($imageFields) : $this->mediaBuilder->buildMediaConversions([]),
+                $hasMedia ? $this->buildMediaAccessors($imageFields, $galleryFields) : '',
+                '', // handled by mediaInterface
+                '', // handled by mediaTrait
+                $hasTranslatable ? "\nuse Spatie\\Translatable\\HasTranslatable;" : '',
+                $hasTranslatable ? $this->buildTranslatableProperties($translatableFields) : '',
             ],
             $stub
         );
@@ -123,15 +141,25 @@ class ModelGenerator
     /**
      * Build the fillable attributes string.
      *
-     * Includes user-defined fields and auto-generated FK fields from belongsTo relationships.
+     * Includes user-defined fields (except translatable) and auto-generated FK fields from belongsTo relationships.
+     * Translatable fields are excluded from fillable because spatie/laravel-translatable
+     * handles them via setTranslation().
      *
      * @param  array<int, array<string, mixed>>  $fields  Field definitions
      * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions
+     * @param  array<int, string>  $translatableFields  Translatable field names
      * @return string Comma-separated quoted field names
      */
-    protected function buildFillableString(array $fields, array $relationships = []): string
+    protected function buildFillableString(array $fields, array $relationships = [], array $translatableFields = []): string
     {
-        $fillable = array_map(fn ($f) => "'{$f['name']}'", $fields);
+        $fillable = [];
+        foreach ($fields as $f) {
+            // Skip translatable fields — spatie handles them via setTranslation
+            if (in_array($f['name'], $translatableFields)) {
+                continue;
+            }
+            $fillable[] = "'{$f['name']}'";
+        }
         $fieldNames = array_column($fields, 'name');
 
         foreach ($relationships as $rel) {
@@ -397,76 +425,87 @@ PHP;
     }
 
     /**
-     * Build registerMediaCollections method for image fields.
+     * Build translatable properties for the model.
      *
-     * @param  array<int, array<string, mixed>>  $imageFields  Image field definitions
-     * @return string Method code or comment
+     * @param  array<int, string>  $translatableFields  Translatable field names
+     * @return string Property code
      */
-    protected function buildMediaCollections(array $imageFields): string
+    protected function buildTranslatableProperties(array $translatableFields): string
     {
-        if (empty($imageFields)) {
-            return '    // media collections';
+        if (empty($translatableFields)) {
+            return '';
         }
 
-        $lines = [];
+        $fields = implode(', ', array_map(fn ($f) => "'{$f}'", $translatableFields));
 
-        foreach ($imageFields as $field) {
-            $collection = $field['modifiers']['collection'] ?? $field['name'];
-            $single = $field['modifiers']['single'] ?? true;
-
-            if ($single) {
-                $lines[] = "        \$this->addMediaCollection('{$collection}')->singleFile();";
-            } else {
-                $lines[] = "        \$this->addMediaCollection('{$collection}');";
-            }
-        }
-
-        $body = implode("\n", $lines);
-
-        return <<<PHP
-    public function registerMediaCollections(): void
-    {
-{$body}
-    }
-PHP;
+        return "    protected array \$translatable = [{$fields}];";
     }
 
     /**
-     * Build registerMediaConversions method for image fields.
+     * Build accessor methods for image and gallery fields.
+     *
+     * For image fields: getUrlAttribute(), getThumbAttribute(), getAltAttribute()
+     * For gallery fields: getImagesAttribute() returning array of {id, url, thumb, alt}
      *
      * @param  array<int, array<string, mixed>>  $imageFields  Image field definitions
-     * @return string Method code or comment
+     * @param  array<int, array<string, mixed>>  $galleryFields  Gallery field definitions
+     * @return string Accessor methods code
      */
-    protected function buildMediaConversions(array $imageFields): string
+    protected function buildMediaAccessors(array $imageFields, array $galleryFields = []): string
     {
-        if (empty($imageFields)) {
-            return '    // media conversions';
+        if (empty($imageFields) && empty($galleryFields)) {
+            return '';
         }
 
-        $lines = [];
+        $methods = [];
 
         foreach ($imageFields as $field) {
-            $collection = $field['modifiers']['collection'] ?? $field['name'];
-            $width = $field['modifiers']['thumb_width'] ?? 200;
-            $height = $field['modifiers']['thumb_height'] ?? 200;
+            $name = $field['name'];
+            $collection = $field['modifiers']['collection'] ?? $name;
 
-            $lines[] = "        \$this->addMediaConversion('thumb')";
-            $lines[] = "            ->fit(Fit::Contain, {$width}, {$height})";
-            $lines[] = '            ->nonQueued();';
-            $lines[] = '';
-            $lines[] = "        \$this->addMediaConversion('webp')";
-            $lines[] = '            ->fit(Fit::Max, 800, 600)';
-            $lines[] = "            ->format('webp')";
-            $lines[] = '            ->nonQueued();';
-        }
-
-        $body = implode("\n", $lines);
-
-        return <<<PHP
-    public function registerMediaConversions(?Media \$media = null): void
+            $methods[] = <<<PHP
+    public function get{$this->studly($name)}UrlAttribute(): ?string
     {
-{$body}
+        return \$this->getFirstMediaUrl('{$collection}') ?: null;
+    }
+
+    public function get{$this->studly($name)}ThumbAttribute(): ?string
+    {
+        return \$this->getFirstMediaUrl('{$collection}', 'thumb') ?: null;
+    }
+
+    public function get{$this->studly($name)}AltAttribute(): ?string
+    {
+        return \$this->getFirstMedia('{$collection}')?->getCustomProperty('alt');
     }
 PHP;
+        }
+
+        foreach ($galleryFields as $field) {
+            $name = $field['name'];
+            $collection = $field['modifiers']['collection'] ?? Str::snake(Str::plural($name));
+
+            $methods[] = <<<PHP
+    public function get{$this->studly($name)}Attribute(): array
+    {
+        return \$this->getMedia('{$collection}')->map(fn (\$media) => [
+            'id' => \$media->id,
+            'url' => \$media->getUrl(),
+            'thumb' => \$media->getUrl('thumb'),
+            'alt' => \$media->getCustomProperty('alt'),
+        ])->toArray();
+    }
+PHP;
+        }
+
+        return implode("\n\n", $methods);
+    }
+
+    /**
+     * Convert a string to studly caps case.
+     */
+    protected function studly(string $value): string
+    {
+        return Str::studly($value);
     }
 }

@@ -3,43 +3,46 @@
 namespace Nktlksvch\BulbaKit\Tests\Integration;
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
 use Nktlksvch\BulbaKit\Generators\ControllerGenerator;
+use Nktlksvch\BulbaKit\Generators\CrudDefinitionGenerator;
 use Nktlksvch\BulbaKit\Generators\MigrationGenerator;
 use Nktlksvch\BulbaKit\Generators\ModelGenerator;
-use Nktlksvch\BulbaKit\Generators\ResourceGenerator;
 use Nktlksvch\BulbaKit\Generators\ReactPageGenerator;
 use Nktlksvch\BulbaKit\Tests\TestCase;
 
 class GenerationPipelineTest extends TestCase
 {
     private MigrationGenerator $migrationGen;
+
     private ModelGenerator $modelGen;
-    private ResourceGenerator $resourceGen;
+
+    private CrudDefinitionGenerator $resourceGen;
+
     private ControllerGenerator $controllerGen;
+
     private ReactPageGenerator $reactGen;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->migrationGen = new MigrationGenerator();
-        $this->modelGen = new ModelGenerator();
-        $this->resourceGen = new ResourceGenerator();
-        $this->controllerGen = new ControllerGenerator();
-        $this->reactGen = new ReactPageGenerator();
+        $this->migrationGen = new MigrationGenerator;
+        $this->modelGen = new ModelGenerator;
+        $this->resourceGen = new CrudDefinitionGenerator;
+        $this->controllerGen = new ControllerGenerator;
+        $this->reactGen = new ReactPageGenerator;
 
-        $this->app->useAppPath($this->tempDir . '/app');
-        $this->app->useDatabasePath($this->tempDir . '/database');
+        $this->app->useAppPath($this->tempDir.'/app');
+        $this->app->useDatabasePath($this->tempDir.'/database');
         $this->app['config']->set('bulba.resource_namespace', 'App\\Resources');
         $this->app['config']->set('bulba.controller_namespace', 'App\\Http\\Controllers\\Admin');
 
         // Create necessary directories
-        mkdir($this->tempDir . '/app/Models', 0755, true);
-        mkdir($this->tempDir . '/app/Resources', 0755, true);
-        mkdir($this->tempDir . '/app/Http/Controllers/Admin', 0755, true);
-        mkdir($this->tempDir . '/database/migrations', 0755, true);
-        mkdir($this->tempDir . '/resources/js/pages/admin', 0755, true);
+        mkdir($this->tempDir.'/app/Models', 0755, true);
+        mkdir($this->tempDir.'/app/Resources', 0755, true);
+        mkdir($this->tempDir.'/app/Http/Controllers/Admin', 0755, true);
+        mkdir($this->tempDir.'/database/migrations', 0755, true);
+        mkdir($this->tempDir.'/resources/js/pages/admin', 0755, true);
     }
 
     protected function tearDown(): void
@@ -51,7 +54,7 @@ class GenerationPipelineTest extends TestCase
     // BelongsTo relationship pipeline
     // -------------------------------------------------------
 
-    public function test_belongsTo_pipeline_generates_all_files(): void
+    public function test_belongs_to_pipeline_generates_all_files(): void
     {
         $fields = [
             ['name' => 'title', 'type' => 'string', 'modifiers' => ['length' => 255]],
@@ -73,12 +76,12 @@ class GenerationPipelineTest extends TestCase
         $this->resourceGen->generate('Post', $fields, $relationships);
         $this->controllerGen->generate('Post', 'inertia', ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
-        $migrationFiles = glob($this->tempDir . '/database/migrations/*_create_posts_table.php');
+        $migrationFiles = glob($this->tempDir.'/database/migrations/*_create_posts_table.php');
         $this->assertCount(1, $migrationFiles);
 
-        $this->assertFileExists($this->tempDir . '/app/Models/Post.php');
-        $this->assertFileExists($this->tempDir . '/app/Resources/PostResource.php');
-        $this->assertFileExists($this->tempDir . '/app/Http/Controllers/Admin/PostController.php');
+        $this->assertFileExists($this->tempDir.'/app/Models/Post.php');
+        $this->assertFileExists($this->tempDir.'/app/Resources/PostResource.php');
+        $this->assertFileExists($this->tempDir.'/app/Http/Controllers/Admin/PostController.php');
 
         $migrationContent = file_get_contents($migrationFiles[0]);
         $this->assertStringContainsString("foreignId('category_id')", $migrationContent);
@@ -86,21 +89,21 @@ class GenerationPipelineTest extends TestCase
         $this->assertStringContainsString("string('title', 255)", $migrationContent);
         $this->assertStringContainsString("text('body')", $migrationContent);
 
-        $modelContent = file_get_contents($this->tempDir . '/app/Models/Post.php');
+        $modelContent = file_get_contents($this->tempDir.'/app/Models/Post.php');
         $this->assertStringContainsString('belongsTo(Category::class', $modelContent);
         $this->assertStringContainsString("'category_id'", $modelContent);
 
-        $resourceContent = file_get_contents($this->tempDir . '/app/Resources/PostResource.php');
+        $resourceContent = file_get_contents($this->tempDir.'/app/Resources/PostResource.php');
         $this->assertStringContainsString("'type' => 'belongsTo'", $resourceContent);
         $this->assertStringContainsString("'category_id'", $resourceContent);
-        $this->assertStringContainsString("exists:categories,id", $resourceContent);
+        $this->assertStringContainsString('exists:categories,id', $resourceContent);
     }
 
     // -------------------------------------------------------
     // HasOne relationship pipeline
     // -------------------------------------------------------
 
-    public function test_hasOne_pipeline_generates_all_files(): void
+    public function test_has_one_pipeline_generates_all_files(): void
     {
         $fields = [
             ['name' => 'name', 'type' => 'string', 'modifiers' => ['length' => 255]],
@@ -120,11 +123,11 @@ class GenerationPipelineTest extends TestCase
         $this->modelGen->generate('User', $fields, false, $relationships);
         $this->resourceGen->generate('User', $fields, $relationships);
 
-        $modelContent = file_get_contents($this->tempDir . '/app/Models/User.php');
+        $modelContent = file_get_contents($this->tempDir.'/app/Models/User.php');
         $this->assertStringContainsString('hasOne(Profile::class', $modelContent);
         $this->assertStringContainsString("'user_id'", $modelContent);
 
-        $resourceContent = file_get_contents($this->tempDir . '/app/Resources/UserResource.php');
+        $resourceContent = file_get_contents($this->tempDir.'/app/Resources/UserResource.php');
         $this->assertStringContainsString("'type' => 'hasOne'", $resourceContent);
         $this->assertStringContainsString("'foreign_key' => 'user_id'", $resourceContent);
     }
@@ -133,7 +136,7 @@ class GenerationPipelineTest extends TestCase
     // HasMany relationship pipeline
     // -------------------------------------------------------
 
-    public function test_hasMany_pipeline_generates_all_files(): void
+    public function test_has_many_pipeline_generates_all_files(): void
     {
         $fields = [
             ['name' => 'name', 'type' => 'string', 'modifiers' => ['length' => 255]],
@@ -153,11 +156,11 @@ class GenerationPipelineTest extends TestCase
         $this->modelGen->generate('User', $fields, false, $relationships);
         $this->resourceGen->generate('User', $fields, $relationships);
 
-        $modelContent = file_get_contents($this->tempDir . '/app/Models/User.php');
+        $modelContent = file_get_contents($this->tempDir.'/app/Models/User.php');
         $this->assertStringContainsString('hasMany(Post::class', $modelContent);
         $this->assertStringContainsString("'user_id'", $modelContent);
 
-        $resourceContent = file_get_contents($this->tempDir . '/app/Resources/UserResource.php');
+        $resourceContent = file_get_contents($this->tempDir.'/app/Resources/UserResource.php');
         $this->assertStringContainsString("'type' => 'hasMany'", $resourceContent);
     }
 
@@ -165,7 +168,7 @@ class GenerationPipelineTest extends TestCase
     // BelongsToMany relationship pipeline
     // -------------------------------------------------------
 
-    public function test_belongsToMany_pipeline_generates_all_files(): void
+    public function test_belongs_to_many_pipeline_generates_all_files(): void
     {
         $fields = [
             ['name' => 'title', 'type' => 'string', 'modifiers' => ['length' => 255]],
@@ -186,7 +189,7 @@ class GenerationPipelineTest extends TestCase
         $this->modelGen->generate('Post', $fields, false, $relationships);
         $this->resourceGen->generate('Post', $fields, $relationships);
 
-        $pivotMigrationFiles = glob($this->tempDir . '/database/migrations/*_create_post_tag_table.php');
+        $pivotMigrationFiles = glob($this->tempDir.'/database/migrations/*_create_post_tag_table.php');
         $this->assertCount(1, $pivotMigrationFiles);
 
         $pivotContent = file_get_contents($pivotMigrationFiles[0]);
@@ -195,11 +198,11 @@ class GenerationPipelineTest extends TestCase
         $this->assertStringContainsString('->constrained(', $pivotContent);
         $this->assertStringContainsString('->cascadeOnDelete()', $pivotContent);
 
-        $modelContent = file_get_contents($this->tempDir . '/app/Models/Post.php');
+        $modelContent = file_get_contents($this->tempDir.'/app/Models/Post.php');
         $this->assertStringContainsString('belongsToMany(Tag::class', $modelContent);
         $this->assertStringContainsString("'post_tag'", $modelContent);
 
-        $resourceContent = file_get_contents($this->tempDir . '/app/Resources/PostResource.php');
+        $resourceContent = file_get_contents($this->tempDir.'/app/Resources/PostResource.php');
         $this->assertStringContainsString("'type' => 'belongsToMany'", $resourceContent);
         $this->assertStringContainsString("'pivot_table' => 'post_tag'", $resourceContent);
     }
@@ -247,7 +250,7 @@ class GenerationPipelineTest extends TestCase
         $this->controllerGen->generate('Post', 'inertia', ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
         // Verify migration
-        $migrationFiles = glob($this->tempDir . '/database/migrations/*_create_posts_table.php');
+        $migrationFiles = glob($this->tempDir.'/database/migrations/*_create_posts_table.php');
         $this->assertCount(1, $migrationFiles);
         $migrationContent = file_get_contents($migrationFiles[0]);
         $this->assertStringContainsString("foreignId('category_id')", $migrationContent);
@@ -255,11 +258,11 @@ class GenerationPipelineTest extends TestCase
         $this->assertStringContainsString('$table->timestamps()', $migrationContent);
 
         // Verify pivot migration
-        $pivotFiles = glob($this->tempDir . '/database/migrations/*_create_post_tag_table.php');
+        $pivotFiles = glob($this->tempDir.'/database/migrations/*_create_post_tag_table.php');
         $this->assertCount(1, $pivotFiles);
 
         // Verify model
-        $modelContent = file_get_contents($this->tempDir . '/app/Models/Post.php');
+        $modelContent = file_get_contents($this->tempDir.'/app/Models/Post.php');
         $this->assertStringContainsString('use SoftDeletes', $modelContent);
         $this->assertStringContainsString('belongsTo(Category::class', $modelContent);
         $this->assertStringContainsString('hasMany(Comment::class', $modelContent);
@@ -267,14 +270,14 @@ class GenerationPipelineTest extends TestCase
         $this->assertStringContainsString("'title', 'body', 'is_published'", $modelContent);
 
         // Verify resource
-        $resourceContent = file_get_contents($this->tempDir . '/app/Resources/PostResource.php');
+        $resourceContent = file_get_contents($this->tempDir.'/app/Resources/PostResource.php');
         $this->assertStringContainsString("'category'", $resourceContent);
         $this->assertStringContainsString("'comments'", $resourceContent);
         $this->assertStringContainsString("'tags'", $resourceContent);
-        $this->assertStringContainsString("exists:categories,id", $resourceContent);
+        $this->assertStringContainsString('exists:categories,id', $resourceContent);
 
         // Verify controller
-        $controllerContent = file_get_contents($this->tempDir . '/app/Http/Controllers/Admin/PostController.php');
+        $controllerContent = file_get_contents($this->tempDir.'/app/Http/Controllers/Admin/PostController.php');
         $this->assertStringContainsString('class PostController extends Controller', $controllerContent);
         $this->assertStringContainsString('PostResource', $controllerContent);
         $this->assertStringContainsString('syncBelongsToMany', $controllerContent);
@@ -292,7 +295,7 @@ class GenerationPipelineTest extends TestCase
 
         $this->controllerGen->generate('Post', 'api', ['index', 'store', 'show', 'destroy']);
 
-        $content = file_get_contents($this->tempDir . '/app/Http/Controllers/Admin/PostController.php');
+        $content = file_get_contents($this->tempDir.'/app/Http/Controllers/Admin/PostController.php');
         $this->assertStringContainsString('response()->json', $content);
         $this->assertStringContainsString('public function index(', $content);
         $this->assertStringContainsString('public function store(', $content);
@@ -313,11 +316,11 @@ class GenerationPipelineTest extends TestCase
         $this->migrationGen->generate('Post', $fields, [], true, true, []);
         $this->modelGen->generate('Post', $fields, true, []);
 
-        $migrationFiles = glob($this->tempDir . '/database/migrations/*_create_posts_table.php');
+        $migrationFiles = glob($this->tempDir.'/database/migrations/*_create_posts_table.php');
         $migrationContent = file_get_contents($migrationFiles[0]);
         $this->assertStringContainsString('$table->softDeletes()', $migrationContent);
 
-        $modelContent = file_get_contents($this->tempDir . '/app/Models/Post.php');
+        $modelContent = file_get_contents($this->tempDir.'/app/Models/Post.php');
         $this->assertStringContainsString('use SoftDeletes', $modelContent);
         $this->assertStringContainsString('use Illuminate\\Database\\Eloquent\\SoftDeletes', $modelContent);
     }
@@ -346,13 +349,13 @@ class GenerationPipelineTest extends TestCase
 
         $this->reactGen->generate('Post', $fields, $relationships);
 
-        $pagesDir = $this->tempDir . '/resources/js/pages/admin/Post';
+        $pagesDir = $this->tempDir.'/resources/js/pages/admin/Post';
 
-        $this->assertFileDoesNotExist($pagesDir . '/Index.tsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Create.tsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Edit.tsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Show.tsx');
-        $this->assertFileDoesNotExist($pagesDir . '/Form.tsx');
+        $this->assertFileDoesNotExist($pagesDir.'/Index.tsx');
+        $this->assertFileDoesNotExist($pagesDir.'/Create.tsx');
+        $this->assertFileDoesNotExist($pagesDir.'/Edit.tsx');
+        $this->assertFileDoesNotExist($pagesDir.'/Show.tsx');
+        $this->assertFileDoesNotExist($pagesDir.'/Form.tsx');
 
         // ReactPageGenerator writes to resource_path() which points to the real app
         // In this test we just verify the generator doesn't throw
@@ -364,7 +367,7 @@ class GenerationPipelineTest extends TestCase
     // Verifies inverse injection produces valid PHP
     // -------------------------------------------------------
 
-    public function test_scenario_post_exists_postCollection_hasOne_post(): void
+    public function test_scenario_post_exists_post_collection_has_one_post(): void
     {
         // Step 1: Create Post
         $postFields = [
@@ -406,41 +409,42 @@ class GenerationPipelineTest extends TestCase
         $this->resourceGen->addInverseRelation('Post', 'belongsTo', 'PostCollection', 'post_collection_id', 'name');
 
         // Verify PostCollection model has hasOne
-        $pcModel = file_get_contents($this->tempDir . '/app/Models/PostCollection.php');
+        $pcModel = file_get_contents($this->tempDir.'/app/Models/PostCollection.php');
         $this->assertStringContainsString('hasOne(Post::class', $pcModel);
         $this->assertStringContainsString("'post_collection_id'", $pcModel);
 
         // Verify Post model has belongsTo (inverse)
-        $postModel = file_get_contents($this->tempDir . '/app/Models/Post.php');
+        $postModel = file_get_contents($this->tempDir.'/app/Models/Post.php');
         $this->assertStringContainsString('belongsTo(PostCollection::class', $postModel);
         $this->assertStringContainsString("'post_collection_id'", $postModel);
 
         // Verify PostCollection resource has 'post' relation with correct FK
-        $pcResource = file_get_contents($this->tempDir . '/app/Resources/PostCollectionResource.php');
+        $pcResource = file_get_contents($this->tempDir.'/app/Resources/PostCollectionResource.php');
         $this->assertStringContainsString("'post'", $pcResource);
         $this->assertStringContainsString("'type' => 'hasOne'", $pcResource);
         $this->assertStringContainsString("'foreign_key' => 'post_collection_id'", $pcResource);
 
         // Verify Post resource has 'postCollection' inverse relation
-        $postResource = file_get_contents($this->tempDir . '/app/Resources/PostResource.php');
+        $postResource = file_get_contents($this->tempDir.'/app/Resources/PostResource.php');
         $this->assertStringContainsString("'postCollection'", $postResource);
         $this->assertStringContainsString("'type' => 'belongsTo'", $postResource);
         $this->assertStringContainsString("'foreign_key' => 'post_collection_id'", $postResource);
 
         // Verify Post resource file is valid PHP
-        $tmpFile = $this->tempDir . '/validate_post_resource.php';
-        file_put_contents($tmpFile, '<?php return ' . $this->extractReturnArray($postResource, 'relations') . ';');
-        $output = shell_exec('php -l ' . escapeshellarg($tmpFile) . ' 2>&1');
+        $tmpFile = $this->tempDir.'/validate_post_resource.php';
+        file_put_contents($tmpFile, '<?php return '.$this->extractReturnArray($postResource, 'relations').';');
+        $output = shell_exec('php -l '.escapeshellarg($tmpFile).' 2>&1');
         $this->assertStringContainsString('No syntax errors', $output);
         unlink($tmpFile);
     }
 
     private function extractReturnArray(string $content, string $method): string
     {
-        $pattern = '/public static function ' . $method . '\(\): array\s*\{\s*return\s*(\[.*?\]);\s*\}/s';
+        $pattern = '/public static function '.$method.'\(\): array\s*\{\s*return\s*(\[.*?\]);\s*\}/s';
         if (preg_match($pattern, $content, $matches)) {
             return $matches[1];
         }
+
         return '[]';
     }
 }

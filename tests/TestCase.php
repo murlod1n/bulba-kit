@@ -2,8 +2,8 @@
 
 namespace Nktlksvch\BulbaKit\Tests;
 
-use Orchestra\Testbench\TestCase as BaseTestCase;
 use Nktlksvch\BulbaKit\Providers\BulbaKitServiceProvider;
+use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -12,7 +12,7 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->tempDir = sys_get_temp_dir() . '/bulba_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir().'/bulba_test_'.uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 
@@ -39,7 +39,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function removeDirectory(string $dir): void
     {
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             return;
         }
 

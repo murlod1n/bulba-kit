@@ -9,7 +9,7 @@ namespace Nktlksvch\BulbaKit\Generators\Builders;
  * Handles nested arrays, scalar values, booleans, and null values with
  * proper quoting and indentation.
  *
- * Used by ResourceGenerator to render fields, validation rules, and relations
+ * Used by CrudDefinitionGenerator to render fields, validation rules, and relations
  * arrays into valid PHP code for generated Resource class files.
  */
 class ArrayRenderer

@@ -62,6 +62,7 @@ export default function Index() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [showCreate, setShowCreate] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [newRedirect, setNewRedirect] = useState({
         url_from: '',
         url_to: '',
@@ -71,11 +72,17 @@ export default function Index() {
 
     const handleCreate = () => {
         setProcessing(true);
+        setFormErrors({});
         router.post('/admin/redirects', newRedirect, {
             onFinish: () => {
                 setProcessing(false);
+            },
+            onSuccess: () => {
                 setShowCreate(false);
                 setNewRedirect({ url_from: '', url_to: '', status_code: 301, is_active: true });
+            },
+            onError: (errs) => {
+                setFormErrors(errs as Record<string, string>);
             },
         });
     };
@@ -92,6 +99,13 @@ export default function Index() {
         router.put(`/admin/redirects/${id}`, {
             is_active: !currentValue,
         });
+    };
+
+    const handleCloseCreate = (open: boolean) => {
+        setShowCreate(open);
+        if (!open) {
+            setFormErrors({});
+        }
     };
 
     return (
@@ -156,31 +170,35 @@ export default function Index() {
                 </CardContent>
             </Card>
 
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
+            <Dialog open={showCreate} onOpenChange={handleCloseCreate}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add Redirect</DialogTitle>
                     </DialogHeader>
                     <FieldGroup className="gap-4">
-                        <Field>
+                        <Field data-invalid={!!formErrors.url_from}>
                             <FieldLabel htmlFor="url_from">From URL</FieldLabel>
                             <Input
                                 id="url_from"
                                 value={newRedirect.url_from}
                                 onChange={(e) => setNewRedirect((p) => ({ ...p, url_from: e.target.value }))}
                                 placeholder="/old-page"
+                                aria-invalid={!!formErrors.url_from}
                             />
+                            {formErrors.url_from && <FieldDescription>{formErrors.url_from}</FieldDescription>}
                         </Field>
-                        <Field>
+                        <Field data-invalid={!!formErrors.url_to}>
                             <FieldLabel htmlFor="url_to">To URL</FieldLabel>
                             <Input
                                 id="url_to"
                                 value={newRedirect.url_to}
                                 onChange={(e) => setNewRedirect((p) => ({ ...p, url_to: e.target.value }))}
                                 placeholder="/new-page"
+                                aria-invalid={!!formErrors.url_to}
                             />
+                            {formErrors.url_to && <FieldDescription>{formErrors.url_to}</FieldDescription>}
                         </Field>
-                        <Field>
+                        <Field data-invalid={!!formErrors.status_code}>
                             <FieldLabel htmlFor="status_code">Status Code</FieldLabel>
                             <Select
                                 value={String(newRedirect.status_code)}
@@ -188,7 +206,7 @@ export default function Index() {
                                     setNewRedirect((p) => ({ ...p, status_code: Number(v) }))
                                 }
                             >
-                                <SelectTrigger id="status_code">
+                                <SelectTrigger id="status_code" aria-invalid={!!formErrors.status_code}>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -196,10 +214,11 @@ export default function Index() {
                                     <SelectItem value="302">302 - Temporary</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {formErrors.status_code && <FieldDescription>{formErrors.status_code}</FieldDescription>}
                         </Field>
                     </FieldGroup>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setShowCreate(false)}>
+                        <Button variant="ghost" onClick={() => handleCloseCreate(false)}>
                             Cancel
                         </Button>
                         <Button onClick={handleCreate} disabled={processing}>

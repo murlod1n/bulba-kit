@@ -1,0 +1,262 @@
+import React, { useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Spinner } from '@/components/ui/spinner';
+import { SaveIcon } from 'lucide-react';
+
+interface GeneralData {
+    site_name: string;
+    site_description: string;
+    site_url: string;
+    admin_email: string;
+    timezone: string;
+    locale: string;
+}
+
+interface SeoData {
+    meta_title: string;
+    meta_description: string;
+    og_image_url: string;
+    google_analytics_id: string;
+    sitemap_enabled: boolean;
+}
+
+interface PageProps {
+    general: GeneralData;
+    seo: SeoData;
+    errors?: Record<string, string>;
+    [key: string]: unknown;
+}
+
+export default function Index() {
+    const { general: initialGeneral, seo: initialSeo, errors } = usePage<PageProps>().props;
+
+    const [general, setGeneral] = useState<GeneralData>(initialGeneral);
+    const [seo, setSeo] = useState<SeoData>(initialSeo);
+    const [processing, setProcessing] = useState<string | null>(null);
+
+    const handleSaveGeneral = () => {
+        setProcessing('general');
+        router.put('/admin/website-settings', { ...general, group: 'general' }, {
+            onFinish: () => setProcessing(null),
+        });
+    };
+
+    const handleSaveSeo = () => {
+        setProcessing('seo');
+        router.put('/admin/website-settings', { ...seo, group: 'seo' }, {
+            onFinish: () => setProcessing(null),
+        });
+    };
+
+    return (
+        <>
+            <Head title="Website Settings" />
+
+            <Tabs defaultValue="general">
+                <TabsList>
+                    <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="seo">SEO</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="general">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>General Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <FieldGroup className="gap-4">
+                                <Field data-invalid={!!errors?.site_name}>
+                                    <FieldLabel htmlFor="site_name">Site Name</FieldLabel>
+                                    <Input
+                                        id="site_name"
+                                        value={general.site_name}
+                                        onChange={(e) => setGeneral((p) => ({ ...p, site_name: e.target.value }))}
+                                        placeholder="My Website"
+                                        aria-invalid={!!errors?.site_name}
+                                    />
+                                    {errors?.site_name && <FieldDescription>{errors.site_name}</FieldDescription>}
+                                </Field>
+                                <Field data-invalid={!!errors?.site_description}>
+                                    <FieldLabel htmlFor="site_description">Site Description</FieldLabel>
+                                    <Textarea
+                                        id="site_description"
+                                        value={general.site_description}
+                                        onChange={(e) => setGeneral((p) => ({ ...p, site_description: e.target.value }))}
+                                        placeholder="A brief description of your website"
+                                        aria-invalid={!!errors?.site_description}
+                                    />
+                                    {errors?.site_description && <FieldDescription>{errors.site_description}</FieldDescription>}
+                                </Field>
+                                <Field data-invalid={!!errors?.site_url}>
+                                    <FieldLabel htmlFor="site_url">Site URL</FieldLabel>
+                                    <Input
+                                        id="site_url"
+                                        value={general.site_url}
+                                        onChange={(e) => setGeneral((p) => ({ ...p, site_url: e.target.value }))}
+                                        placeholder="https://example.com"
+                                        aria-invalid={!!errors?.site_url}
+                                    />
+                                    {errors?.site_url && <FieldDescription>{errors.site_url}</FieldDescription>}
+                                </Field>
+                                <Field data-invalid={!!errors?.admin_email}>
+                                    <FieldLabel htmlFor="admin_email">Admin Email</FieldLabel>
+                                    <Input
+                                        id="admin_email"
+                                        type="email"
+                                        value={general.admin_email}
+                                        onChange={(e) => setGeneral((p) => ({ ...p, admin_email: e.target.value }))}
+                                        placeholder="admin@example.com"
+                                        aria-invalid={!!errors?.admin_email}
+                                    />
+                                    {errors?.admin_email && <FieldDescription>{errors.admin_email}</FieldDescription>}
+                                </Field>
+                                <Field data-invalid={!!errors?.timezone}>
+                                    <FieldLabel htmlFor="timezone">Timezone</FieldLabel>
+                                    <Select
+                                        value={general.timezone}
+                                        onValueChange={(v) => setGeneral((p) => ({ ...p, timezone: v }))}
+                                    >
+                                        <SelectTrigger id="timezone" aria-invalid={!!errors?.timezone}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="UTC">UTC</SelectItem>
+                                            <SelectItem value="Europe/London">Europe/London</SelectItem>
+                                            <SelectItem value="Europe/Berlin">Europe/Berlin</SelectItem>
+                                            <SelectItem value="Europe/Moscow">Europe/Moscow</SelectItem>
+                                            <SelectItem value="America/New_York">America/New_York</SelectItem>
+                                            <SelectItem value="America/Chicago">America/Chicago</SelectItem>
+                                            <SelectItem value="America/Los_Angeles">America/Los_Angeles</SelectItem>
+                                            <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                                            <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
+                                            <SelectItem value="Australia/Sydney">Australia/Sydney</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors?.timezone
+                                        ? <FieldDescription>{errors.timezone}</FieldDescription>
+                                        : <FieldDescription>Default timezone for the application.</FieldDescription>
+                                    }
+                                </Field>
+                                <Field data-invalid={!!errors?.locale}>
+                                    <FieldLabel htmlFor="locale">Locale</FieldLabel>
+                                    <Select
+                                        value={general.locale}
+                                        onValueChange={(v) => setGeneral((p) => ({ ...p, locale: v }))}
+                                    >
+                                        <SelectTrigger id="locale" aria-invalid={!!errors?.locale}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="en">English</SelectItem>
+                                            <SelectItem value="ru">Russian</SelectItem>
+                                            <SelectItem value="de">German</SelectItem>
+                                            <SelectItem value="fr">French</SelectItem>
+                                            <SelectItem value="es">Spanish</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors?.locale && <FieldDescription>{errors.locale}</FieldDescription>}
+                                </Field>
+                                <div className="flex justify-end">
+                                    <Button onClick={handleSaveGeneral} disabled={processing !== null}>
+                                        {processing === 'general' && <Spinner data-icon="inline-start" />}
+                                        <SaveIcon data-icon="inline-start" />
+                                        {processing === 'general' ? 'Saving...' : 'Save General'}
+                                    </Button>
+                                </div>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="seo">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>SEO Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <FieldGroup className="gap-4">
+                                <Field data-invalid={!!errors?.meta_title}>
+                                    <FieldLabel htmlFor="meta_title">Meta Title</FieldLabel>
+                                    <Input
+                                        id="meta_title"
+                                        value={seo.meta_title}
+                                        onChange={(e) => setSeo((p) => ({ ...p, meta_title: e.target.value }))}
+                                        placeholder="My Website - Home"
+                                        aria-invalid={!!errors?.meta_title}
+                                    />
+                                    {errors?.meta_title
+                                        ? <FieldDescription>{errors.meta_title}</FieldDescription>
+                                        : <FieldDescription>Default title tag for pages without a specific title.</FieldDescription>
+                                    }
+                                </Field>
+                                <Field data-invalid={!!errors?.meta_description}>
+                                    <FieldLabel htmlFor="meta_description">Meta Description</FieldLabel>
+                                    <Textarea
+                                        id="meta_description"
+                                        value={seo.meta_description}
+                                        onChange={(e) => setSeo((p) => ({ ...p, meta_description: e.target.value }))}
+                                        placeholder="A brief description for search engines"
+                                        aria-invalid={!!errors?.meta_description}
+                                    />
+                                    {errors?.meta_description
+                                        ? <FieldDescription>{errors.meta_description}</FieldDescription>
+                                        : <FieldDescription>Default meta description for search engine results.</FieldDescription>
+                                    }
+                                </Field>
+                                <Field data-invalid={!!errors?.og_image_url}>
+                                    <FieldLabel htmlFor="og_image_url">OG Image URL</FieldLabel>
+                                    <Input
+                                        id="og_image_url"
+                                        value={seo.og_image_url}
+                                        onChange={(e) => setSeo((p) => ({ ...p, og_image_url: e.target.value }))}
+                                        placeholder="https://example.com/og-image.jpg"
+                                        aria-invalid={!!errors?.og_image_url}
+                                    />
+                                    {errors?.og_image_url
+                                        ? <FieldDescription>{errors.og_image_url}</FieldDescription>
+                                        : <FieldDescription>Default Open Graph image for social media sharing.</FieldDescription>
+                                    }
+                                </Field>
+                                <Field data-invalid={!!errors?.google_analytics_id}>
+                                    <FieldLabel htmlFor="google_analytics_id">Google Analytics ID</FieldLabel>
+                                    <Input
+                                        id="google_analytics_id"
+                                        value={seo.google_analytics_id}
+                                        onChange={(e) => setSeo((p) => ({ ...p, google_analytics_id: e.target.value }))}
+                                        placeholder="G-XXXXXXXXXX"
+                                        aria-invalid={!!errors?.google_analytics_id}
+                                    />
+                                    {errors?.google_analytics_id && <FieldDescription>{errors.google_analytics_id}</FieldDescription>}
+                                </Field>
+                                <Field data-invalid={!!errors?.sitemap_enabled} orientation="horizontal">
+                                    <Checkbox
+                                        id="sitemap_enabled"
+                                        checked={seo.sitemap_enabled}
+                                        onCheckedChange={(checked) => setSeo((p) => ({ ...p, sitemap_enabled: checked === true }))}
+                                    />
+                                    <FieldLabel htmlFor="sitemap_enabled">Enable Sitemap</FieldLabel>
+                                    {errors?.sitemap_enabled && <FieldDescription>{errors.sitemap_enabled}</FieldDescription>}
+                                </Field>
+                                <div className="flex justify-end">
+                                    <Button onClick={handleSaveSeo} disabled={processing !== null}>
+                                        {processing === 'seo' && <Spinner data-icon="inline-start" />}
+                                        <SaveIcon data-icon="inline-start" />
+                                        {processing === 'seo' ? 'Saving...' : 'Save SEO'}
+                                    </Button>
+                                </div>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </>
+    );
+}

@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Settings\Website;
+
+use Spatie\LaravelSettings\Settings;
+
+class SeoSettings extends Settings
+{
+    public string $meta_title = '';
+
+    public string $meta_description = '';
+
+    public string $og_image_url = '';
+
+    public string $google_analytics_id = '';
+
+    public bool $sitemap_enabled = true;
+
+    public static function group(): string
+    {
+        return 'seo';
+    }
+}

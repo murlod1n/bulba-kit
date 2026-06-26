@@ -3,8 +3,27 @@
 namespace Nktlksvch\BulbaKit\Modules\Redirects;
 
 use Illuminate\Support\Facades\File;
+use Nktlksvch\BulbaKit\Generators\ControllerGenerator;
+use Nktlksvch\BulbaKit\Generators\CrudDefinitionGenerator;
+use Nktlksvch\BulbaKit\Generators\MigrationGenerator;
+use Nktlksvch\BulbaKit\Generators\ModelGenerator;
+use Nktlksvch\BulbaKit\Generators\ReactPageGenerator;
+use Nktlksvch\BulbaKit\Generators\RouteGenerator;
 use Nktlksvch\BulbaKit\Modules\Contracts\ModuleInterface;
 
+/**
+ * Redirects module — URL redirect management with middleware.
+ *
+ * Unlike a DefaultCrud resource, this module installs custom infrastructure:
+ * - Standard CRUD (migration, model, controller, pages, routes)
+ * - RedirectMiddleware that intercepts requests and performs redirects
+ * - Cache-based redirect lookup (1 hour TTL)
+ * - Middleware registration in bootstrap/app.php
+ *
+ * Model: Redirect
+ * Table: redirects
+ * Route: /admin/redirects
+ */
 class RedirectsModule implements ModuleInterface
 {
     public function name(): string
@@ -22,36 +41,63 @@ class RedirectsModule implements ModuleInterface
         return 'arrow-right-left';
     }
 
-    public function modelName(): string
+    /**
+     * Install the redirects module: migration, model, resource, controller,
+     * custom index page, routes, and redirect middleware.
+     */
+    public function install(object $command): void
     {
-        return 'Redirect';
+        $command->info('  Generating migration...');
+        app(MigrationGenerator::class)->generate(
+            'Redirect',
+            $this->fields(),
+            [],
+            true,
+            false,
+            []
+        );
+
+        $command->info('  Generating model...');
+        app(ModelGenerator::class)->generate(
+            'Redirect',
+            $this->fields(),
+            false,
+            []
+        );
+
+        $command->info('  Generating resource...');
+        app(CrudDefinitionGenerator::class)->generate(
+            'Redirect',
+            $this->fields(),
+            []
+        );
+
+        $command->info('  Generating controller...');
+        app(ControllerGenerator::class)->generate(
+            'Redirect',
+            'inertia',
+            $this->controllerMethods(),
+            $this->fields()
+        );
+
+        $command->info('  Generating pages...');
+        $this->installPages($command);
+
+        $command->info('  Generating routes...');
+        app(RouteGenerator::class)->generate(
+            'Redirect',
+            'inertia',
+            $this->controllerMethods()
+        );
+
+        $command->info('  Installing middleware...');
+        $this->installMiddleware();
+        $this->registerMiddleware();
     }
 
-    public function tableName(): string
-    {
-        return 'redirects';
-    }
-
-    public function fields(): array
-    {
-        return [
-            ['name' => 'url_from', 'type' => 'string', 'modifiers' => ['length' => 2048, 'unique' => true]],
-            ['name' => 'url_to', 'type' => 'string', 'modifiers' => ['length' => 2048]],
-            ['name' => 'status_code', 'type' => 'integer', 'modifiers' => ['default' => 301]],
-            ['name' => 'is_active', 'type' => 'boolean', 'modifiers' => ['default' => true]],
-        ];
-    }
-
-    public function controllerMethods(): array
-    {
-        return ['index', 'create', 'store', 'edit', 'update', 'destroy'];
-    }
-
-    public function options(): array
-    {
-        return ['timestamps' => true, 'softDeletes' => false];
-    }
-
+    /**
+     * @return array<int, array{group: string, items: array<int, array{title: string, href: string, icon: string}>}>
+     */
     public function navigation(): array
     {
         return [
@@ -61,32 +107,57 @@ class RedirectsModule implements ModuleInterface
         ];
     }
 
-    public function seederClass(): ?string
-    {
-        return null;
-    }
-
-    public function seederStub(): ?string
-    {
-        return null;
-    }
-
-    public function customStubs(): array
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function fields(): array
     {
         return [
-            'index-page' => 'redirect-index-page',
+            ['name' => 'url_from', 'type' => 'string', 'modifiers' => ['length' => 2048, 'unique' => true]],
+            ['name' => 'url_to', 'type' => 'string', 'modifiers' => ['length' => 2048]],
+            ['name' => 'status_code', 'type' => 'integer', 'modifiers' => ['default' => 301]],
+            ['name' => 'is_active', 'type' => 'boolean', 'modifiers' => ['default' => true]],
         ];
     }
 
-    public function postInstall(object $command): void
+    /**
+     * @return array<int, string>
+     */
+    protected function controllerMethods(): array
     {
-        $this->installMiddleware($command);
-        $this->registerMiddleware($command);
+        return ['index', 'create', 'store', 'edit', 'update', 'destroy'];
     }
 
-    protected function installMiddleware(object $command): void
+    /**
+     * Install the custom index page from stub, or fall back to ReactPageGenerator.
+     */
+    protected function installPages(object $command): void
     {
-        $stubPath = dirname(__DIR__, 2).'/Modules/Redirects/stubs/redirect-middleware.stub';
+        $pagesPath = config('bulba.react_pages_path', 'admin');
+        $pagesDir = resource_path("js/pages/{$pagesPath}/Redirect");
+
+        File::ensureDirectoryExists($pagesDir);
+
+        $stubPath = dirname(__DIR__).'/Redirects/stubs/redirect-index-page.stub';
+
+        if (File::exists($stubPath)) {
+            File::put($pagesDir.'/Index.tsx', File::get($stubPath));
+            $command->info('    Created: Index.tsx');
+        } else {
+            app(ReactPageGenerator::class)->generate(
+                'Redirect',
+                $this->fields(),
+                []
+            );
+        }
+    }
+
+    /**
+     * Copy RedirectMiddleware stub to the host app's Http/Middleware directory.
+     */
+    protected function installMiddleware(): void
+    {
+        $stubPath = dirname(__DIR__).'/Redirects/stubs/redirect-middleware.stub';
         $destination = app_path('Http/Middleware/RedirectMiddleware.php');
 
         if (File::exists($destination)) {
@@ -101,7 +172,10 @@ class RedirectsModule implements ModuleInterface
         File::put($destination, $content);
     }
 
-    protected function registerMiddleware(object $command): void
+    /**
+     * Register RedirectMiddleware in bootstrap/app.php: add alias and append to web group.
+     */
+    protected function registerMiddleware(): void
     {
         $bootstrapPath = base_path('bootstrap/app.php');
         if (! File::exists($bootstrapPath)) {
@@ -114,7 +188,6 @@ class RedirectsModule implements ModuleInterface
             return;
         }
 
-        // Add middleware alias
         $aliasLine = "        'redirect' => \\App\\Http\\Middleware\\RedirectMiddleware::class,";
 
         if (str_contains($content, 'withMiddleware')) {
@@ -126,7 +199,6 @@ class RedirectsModule implements ModuleInterface
             );
         }
 
-        // Append middleware to web group
         $appendToWeb = "        \$middleware->appendToGroup('web', \\App\\Http\\Middleware\\RedirectMiddleware::class);";
 
         if (! str_contains($content, 'RedirectMiddleware::class')) {

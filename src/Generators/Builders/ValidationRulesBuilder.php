@@ -26,9 +26,10 @@ class ValidationRulesBuilder
      * @param  array<int, array<string, mixed>>  $fields  Field definitions from askForFields()
      * @param  string  $name  Resource/model name (used for unique table reference)
      * @param  array<int, array<string, mixed>>  $relationships  Relationship definitions from askForRelationships()
+     * @param  array<int, string>  $translatableFields  Translatable field names
      * @return array<string, array<int, string>> Associative array of field_name => rules_array
      */
-    public function build(array $fields, string $name, array $relationships = []): array
+    public function build(array $fields, string $name, array $relationships = [], array $translatableFields = []): array
     {
         $fkFields = [];
 
@@ -44,8 +45,26 @@ class ValidationRulesBuilder
         $rules = [];
 
         foreach ($fields as $field) {
-            // Skip image fields — they're handled by Media Library, not DB columns
-            if ($field['type'] === 'image') {
+            // Skip image and gallery fields — they're handled by Media Library, not DB columns
+            if ($field['type'] === 'image' || $field['type'] === 'gallery') {
+                continue;
+            }
+
+            $isTranslatable = in_array($field['name'], $translatableFields);
+
+            if ($isTranslatable) {
+                // Translatable fields: validate the array itself + per-locale rules
+                $locales = config('bulba.locales', ['en']);
+                $rules[$field['name']] = ['required', 'array'];
+
+                foreach ($locales as $locale) {
+                    $localeRule = ['required', 'string'];
+                    if ($field['type'] === 'string' && isset($field['modifiers']['length'])) {
+                        $localeRule[] = 'max:'.$field['modifiers']['length'];
+                    }
+                    $rules[$field['name'].'.'.$locale] = $localeRule;
+                }
+
                 continue;
             }
 

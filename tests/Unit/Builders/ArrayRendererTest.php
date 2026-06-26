@@ -2,8 +2,8 @@
 
 namespace Nktlksvch\BulbaKit\Tests\Unit\Builders;
 
-use PHPUnit\Framework\TestCase;
 use Nktlksvch\BulbaKit\Generators\Builders\ArrayRenderer;
+use PHPUnit\Framework\TestCase;
 
 class ArrayRendererTest extends TestCase
 {
@@ -11,7 +11,7 @@ class ArrayRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->renderer = new ArrayRenderer();
+        $this->renderer = new ArrayRenderer;
     }
 
     public function test_render_simple_key_value_array(): void

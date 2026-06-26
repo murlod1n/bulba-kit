@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use Nktlksvch\BulbaKit\Console\Commands\Concerns\AsksForAiGeneration;
 use Nktlksvch\BulbaKit\Console\Commands\Concerns\AsksForFields;
 use Nktlksvch\BulbaKit\Console\Commands\Concerns\AsksForRelationships;
+use Nktlksvch\BulbaKit\Console\Commands\Concerns\AsksForTranslatable;
 use Nktlksvch\BulbaKit\Console\Commands\Concerns\DisplaysSummary;
 use Nktlksvch\BulbaKit\Console\Commands\Concerns\RunsGenerators;
 use Nktlksvch\BulbaKit\Services\SchemaInspector;
@@ -30,6 +31,7 @@ class BulbaMakeResource extends Command
     use AsksForAiGeneration;
     use AsksForFields;
     use AsksForRelationships;
+    use AsksForTranslatable;
     use DisplaysSummary;
     use RunsGenerators;
 
@@ -64,6 +66,9 @@ class BulbaMakeResource extends Command
 
         // Step 2: Collect field definitions
         $fields = $this->collectFields();
+
+        // Step 2b: Collect translatable fields
+        $translatableFields = $this->askForTranslatable($fields);
 
         // Step 3: Collect relationship definitions
         $relationships = $this->askForRelationships($fields, $name, $this->schema);
@@ -101,7 +106,8 @@ class BulbaMakeResource extends Command
             $options['timestamps'],
             $options['softDeletes'],
             $options['controllerType'],
-            $options['controllerMethods']
+            $options['controllerMethods'],
+            $translatableFields
         );
 
         // Step 8: Display post-generation instructions

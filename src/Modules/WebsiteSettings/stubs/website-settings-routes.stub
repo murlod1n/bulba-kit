@@ -1,0 +1,2 @@
+Route::get('/admin/website-settings', [WebsiteSettingController::class, 'index'])->name('admin.website-settings.index');
+Route::put('/admin/website-settings', [WebsiteSettingController::class, 'update'])->name('admin.website-settings.update');

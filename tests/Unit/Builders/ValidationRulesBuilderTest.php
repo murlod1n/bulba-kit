@@ -2,8 +2,8 @@
 
 namespace Nktlksvch\BulbaKit\Tests\Unit\Builders;
 
-use PHPUnit\Framework\TestCase;
 use Nktlksvch\BulbaKit\Generators\Builders\ValidationRulesBuilder;
+use PHPUnit\Framework\TestCase;
 
 class ValidationRulesBuilderTest extends TestCase
 {
@@ -11,7 +11,7 @@ class ValidationRulesBuilderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->builder = new ValidationRulesBuilder();
+        $this->builder = new ValidationRulesBuilder;
     }
 
     public function test_build_required_field(): void
@@ -92,7 +92,7 @@ class ValidationRulesBuilderTest extends TestCase
         $this->assertContains('numeric', $result['price']);
     }
 
-    public function test_build_belongsTo_fk_field(): void
+    public function test_build_belongs_to_fk_field(): void
     {
         $fields = [];
 
@@ -115,7 +115,7 @@ class ValidationRulesBuilderTest extends TestCase
         $this->assertContains('exists:categories,id', $result['category_id']);
     }
 
-    public function test_build_nullable_belongsTo_fk_field(): void
+    public function test_build_nullable_belongs_to_fk_field(): void
     {
         $fields = [];
 

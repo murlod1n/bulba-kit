@@ -8,3 +8,8 @@ parameters:
     level: 6
 
     tmpDir: .phpstan.cache
+
+    ignoreErrors:
+        -
+            identifier: trait.unused
+            path: src/Traits/**

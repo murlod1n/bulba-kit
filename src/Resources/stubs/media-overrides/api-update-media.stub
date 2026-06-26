@@ -1,0 +1,18 @@
+
+    public function update(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        $definition = $this->getCrudDefinition();
+        $item = $definition->model()::findOrFail($id);
+        $validated = $request->validate($definition->validationRules());
+        $item->update($validated);
+
+        $this->syncBelongsToMany($item, $request);
+        $this->handleMediaUpload($item, $request);
+        $this->handleMediaRemoval($item, $request);
+        $this->handleGalleryUpload($item, $request);
+        $this->handleGalleryRemoval($item, $request);
+        $this->handleGalleryReorder($item, $request);
+        $this->handleGalleryAlt($item, $request);
+
+        return response()->json($item);
+    }
